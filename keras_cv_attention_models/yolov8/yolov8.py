@@ -1,3 +1,5 @@
+
+
 import math
 from keras_cv_attention_models import backend
 from keras_cv_attention_models.backend import layers, functional, models, initializers, image_data_format
@@ -9,6 +11,7 @@ from keras_cv_attention_models.attention_layers import (
     add_pre_post_process,
     ZeroInitGain,
 )
+import tensorflow as tf
 from keras_cv_attention_models import model_surgery
 from keras_cv_attention_models.download_and_load import reload_model_weights
 from keras_cv_attention_models.coco import eval_func, anchors_func
@@ -19,12 +22,6 @@ PRETRAINED_DICT = {
     "yolov8_n": {"coco": "4cb83c7e452cdcd440b75546df0b211e"},
     "yolov8_s": {"coco": "4e1ac133e2a8831845172d8491c2747a"},
     "yolov8_x": {"coco": "2be28e650bf299aeea7ee26ab765a23e"},
-    "yolov8_x6": {"coco": "f51ed830ccf5efae7dc56f2ce5e20890"},
-    "yolov8_l_cls": {"imagenet": "071f41125034dd15401f6c6925fc1e6f"},
-    "yolov8_m_cls": {"imagenet": "35ef50aa07ff232afa08f321447e354d"},
-    "yolov8_n_cls": {"imagenet": "b1cfac787589689c0f2abde6893ec140"},
-    "yolov8_s_cls": {"imagenet": "2caa57e8cf67b39921c35f89cea5061c"},
-    "yolov8_x_cls": {"imagenet": "2d4b8b996c24f5fde903678ee8b7cf20"},
 }
 
 
@@ -172,14 +169,14 @@ def YOLOV8Backbone(
             nn = spatial_pyramid_pooling_fast(nn, pool_size=5, activation=activation, name=stack_name + "spp_fast_")
         features.append(nn)
 
-    if is_classification_model:
-        nn = conv_bn(nn, 1280, kernel_size=1, strides=1, activation=activation, name="pre_")
-        nn = layers.GlobalAveragePooling2D(name="avg_pool")(nn)
-        if dropout > 0:
-            nn = layers.Dropout(dropout, name="head_drop")(nn)
-        outputs = layers.Dense(num_classes, dtype="float32", activation=classifier_activation, name="predictions")(nn)
-    else:
-        outputs = [features[ii] for ii in out_features]
+    # if is_classification_model:
+    #     nn = conv_bn(nn, 1280, kernel_size=1, strides=1, activation=activation, name="pre_")
+    #     nn = layers.GlobalAveragePooling2D(name="avg_pool")(nn)
+    #     if dropout > 0:
+    #         nn = layers.Dropout(dropout, name="head_drop")(nn)
+    #     outputs = layers.Dense(num_classes, dtype="float32", activation=classifier_activation, name="predictions")(nn)
+    # else:
+    outputs = [features[ii] for ii in out_features]
     model = models.Model(inputs, outputs, name=model_name)
 
     if is_classification_model:
@@ -267,8 +264,8 @@ def yolov8_head(
         for id in range(depth):
             cls_nn = conv_bn(cls_nn, cls_channel, 3, activation=activation, name=cur_name + "cls_{}_".format(id + 1))
         cls_out = conv2d_no_bias(cls_nn, num_classes * num_anchors, 1, use_bias=True, bias_initializer=bias_init, name=cur_name + "cls_3_")
-        if classifier_activation is not None:
-            cls_out = activation_by_name(cls_out, classifier_activation, name=cur_name + "classifier_")
+        # if classifier_activation is not None:
+        #     cls_out = activation_by_name(cls_out, classifier_activation, name=cur_name + "classifier_")
 
         # obj_preds, not using for yolov8
         if use_object_scores:
@@ -279,7 +276,15 @@ def yolov8_head(
         else:
             out = functional.concat([reg_out, cls_out], axis=channel_axis)
         out = out if image_data_format() == "channels_last" else layers.Permute([2, 3, 1])(out)
-        out = layers.Reshape([-1, out.shape[-1]], name=cur_name + "output_reshape")(out)
+        # out = layers.Reshape([-1, out.shape[-1]], name=cur_name + "output_reshape")(out)
+
+        # temp=out.shape[1]
+        # out = tf.stack([out[:, i//temp, i%temp, :] for i in range(temp*temp)], axis=1)
+        #out is (None, 80,80, 144)
+
+        out=tf.reshape(out, (1, out.shape[1]*out.shape[2], out.shape[3]))
+
+
         outputs.append(out)
     outputs = functional.concat(outputs, axis=1)
     return outputs
@@ -316,7 +321,7 @@ def YOLOV8(
             csp_channels, csp_depthes, features_pick, use_reparam_conv=use_reparam_conv, input_shape=input_shape, activation=activation, model_name="backbone"
         )
         features = backbone.outputs
-        print('1111111111111111',type(features))
+  
     else:
         if isinstance(features_pick[0], str):
             features = [backbone.get_layer(layer_name) for layer_name in features_pick]
@@ -334,10 +339,12 @@ def YOLOV8(
 
     header_kwargs = {"use_object_scores": use_object_scores, "activation": activation, "classifier_activation": classifier_activation}
     outputs = yolov8_head(fpn_features, num_classes, regression_len, num_anchors, **header_kwargs, name="head_")
+   
+
     outputs = layers.Activation("linear", dtype="float32", name="outputs_fp32")(outputs)
 
     model = models.Model(inputs, outputs, name=model_name)
-    reload_model_weights(model, PRETRAINED_DICT, "yolov8", pretrained)
+    # reload_model_weights(model, PRETRAINED_DICT, "yolov8", pretrained)
 
     pyramid_levels = [pyramid_levels_min, pyramid_levels_min + len(features_pick) - 1]  # -> [3, 5]
     post_process = eval_func.DecodePredictions(
@@ -397,47 +404,4 @@ def YOLOV8_X(input_shape=(640, 640, 3), freeze_backbone=False, num_classes=80, b
     csp_depthes = [3, 6, 6, 3]
     return YOLOV8(**locals(), model_name=kwargs.pop("model_name", "yolov8_x"), **kwargs)
 
-
-@register_model
-def YOLOV8_X6(input_shape=(1280, 1280, 3), freeze_backbone=False, num_classes=80, backbone=None, classifier_activation="sigmoid", pretrained="coco", **kwargs):
-    csp_channels = [160, 320, 640, 640, 640]
-    csp_depthes = [3, 6, 6, 3, 3]
-    features_pick = [-4, -3, -2, -1]
-    paf_parallel_mode = False  # C2
-    return YOLOV8(**locals(), model_name=kwargs.pop("model_name", "yolov8_x6"), **kwargs)
-
-
-""" Classification models """
-
-
-@register_model
-def YOLOV8_N_CLS(input_shape=(640, 640, 3), num_classes=1000, activation="swish", classifier_activation="softmax", pretrained="imagenet", **kwargs):
-    return YOLOV8Backbone(**locals(), model_name=kwargs.pop("model_name", "yolov8_n_cls"), **kwargs)
-
-
-@register_model
-def YOLOV8_S_CLS(input_shape=(640, 640, 3), num_classes=1000, activation="swish", classifier_activation="softmax", pretrained="imagenet", **kwargs):
-    channels = [64, 128, 256, 512]
-    return YOLOV8Backbone(**locals(), model_name=kwargs.pop("model_name", "yolov8_s_cls"), **kwargs)
-
-
-@register_model
-def YOLOV8_M_CLS(input_shape=(640, 640, 3), num_classes=1000, activation="swish", classifier_activation="softmax", pretrained="imagenet", **kwargs):
-    channels = [96, 192, 384, 768]
-    depthes = [2, 4, 4, 2]
-    return YOLOV8Backbone(**locals(), model_name=kwargs.pop("model_name", "yolov8_m_cls"), **kwargs)
-
-
-@register_model
-def YOLOV8_L_CLS(input_shape=(640, 640, 3), num_classes=1000, activation="swish", classifier_activation="softmax", pretrained="imagenet", **kwargs):
-    channels = [128, 256, 512, 1024]
-    depthes = [3, 6, 6, 3]
-    return YOLOV8Backbone(**locals(), model_name=kwargs.pop("model_name", "yolov8_l_cls"), **kwargs)
-
-
-@register_model
-def YOLOV8_X_CLS(input_shape=(640, 640, 3), num_classes=1000, activation="swish", classifier_activation="softmax", pretrained="imagenet", **kwargs):
-    channels = [160, 320, 640, 1280]
-    depthes = [3, 6, 6, 3]
-    return YOLOV8Backbone(**locals(), model_name=kwargs.pop("model_name", "yolov8_x_cls"), **kwargs)
 

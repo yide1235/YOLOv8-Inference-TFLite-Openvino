@@ -6,12 +6,6 @@ from keras_cv_attention_models.yolov8.yolov8 import (
     YOLOV8_M,
     YOLOV8_L,
     YOLOV8_X,
-    YOLOV8_X6,
-    YOLOV8_N_CLS,
-    YOLOV8_S_CLS,
-    YOLOV8_M_CLS,
-    YOLOV8_L_CLS,
-    YOLOV8_X_CLS,
     switch_to_deploy,
 )
 from keras_cv_attention_models.yolov8.yolo_nas import YOLO_NAS, YOLO_NAS_S, YOLO_NAS_M, YOLO_NAS_L
@@ -101,7 +95,6 @@ YOLOV8_S.__doc__ = YOLOV8_N.__doc__
 YOLOV8_M.__doc__ = YOLOV8_N.__doc__
 YOLOV8_L.__doc__ = YOLOV8_N.__doc__
 YOLOV8_X.__doc__ = YOLOV8_N.__doc__
-YOLOV8_X6.__doc__ = YOLOV8_N.__doc__
 
 YOLO_NAS.__doc__ = YOLOV8.__doc__
 YOLO_NAS_S.__doc__ = YOLOV8_N.__doc__
@@ -137,11 +130,3 @@ Model architectures:
   | YOLOV8_X_CLS | 57.42M | 76.96G    | 9.43G     | 224   | 78.4     |
 """
 
-YOLOV8_N_CLS.__doc__ = __head_doc__ + """
-Args:
-""" + __classifier_tail_doc__
-
-YOLOV8_S_CLS.__doc__ = YOLOV8_N_CLS.__doc__
-YOLOV8_M_CLS.__doc__ = YOLOV8_N_CLS.__doc__
-YOLOV8_L_CLS.__doc__ = YOLOV8_N_CLS.__doc__
-YOLOV8_X_CLS.__doc__ = YOLOV8_N_CLS.__doc__

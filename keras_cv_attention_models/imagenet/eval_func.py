@@ -175,38 +175,86 @@ def evaluation(
 """ Decode predictions """
 
 
-def decode_predictions(preds, top=5):
-    """Similar function from keras.applications.imagenet_utils.decode_predictions, just also supporting imagenet21k class index"""
-    from keras_cv_attention_models.backend import get_file
+# def decode_predictions(preds, top=5):
+#     """Similar function from keras.applications.imagenet_utils.decode_predictions, just also supporting imagenet21k class index"""
+#     from keras_cv_attention_models.backend import get_file
 
-    preds = np.array(preds.detach() if hasattr(preds, "detach") else preds)
-    if len(preds.shape) != 2 or (preds.shape[-1] not in [1000, 21843, 21841]):
-        print("[Error] not imagenet or imagenet21k prediction, not supported")
-        return
+#     preds = np.array(preds.detach() if hasattr(preds, "detach") else preds)
+#     if len(preds.shape) != 2 or (preds.shape[-1] not in [1000, 21843, 21841]):
+#         print("[Error] not imagenet or imagenet21k prediction, not supported")
+#         return
 
-    is_imagenet = preds.shape[-1] == 1000
+#     is_imagenet = preds.shape[-1] == 1000
 
-    global CLASS_INDEX_IMAGENET
-    global CLASS_INDEX_IMAGENET21K
-    if (is_imagenet and CLASS_INDEX_IMAGENET is None) or (not is_imagenet and CLASS_INDEX_IMAGENET21K is None):
-        if is_imagenet:
-            url = "https://github.com/leondgarse/keras_cv_attention_models/releases/download/assets/imagenet_class_index.json"
-            file_hash = "c2c37ea517e94d9795004a39431a14cb"
-        else:
-            url = "https://github.com/leondgarse/keras_cv_attention_models/releases/download/assets/imagenet21k_class_index.json"
-            file_hash = "a07173727548feaea3cc855ed6341a4f"
+#     global CLASS_INDEX_IMAGENET
+#     global CLASS_INDEX_IMAGENET21K
+#     if (is_imagenet and CLASS_INDEX_IMAGENET is None) or (not is_imagenet and CLASS_INDEX_IMAGENET21K is None):
+#         if is_imagenet:
+#             url = "https://github.com/leondgarse/keras_cv_attention_models/releases/download/assets/imagenet_class_index.json"
+#             file_hash = "c2c37ea517e94d9795004a39431a14cb"
+#         else:
+#             url = "https://github.com/leondgarse/keras_cv_attention_models/releases/download/assets/imagenet21k_class_index.json"
+#             file_hash = "a07173727548feaea3cc855ed6341a4f"
 
-        class_index_path = os.path.join(os.path.expanduser("~/.keras/datasets"), os.path.basename(url))
-        print(">>>> Trying to load index file:", class_index_path)
-        class_index_path = get_file(origin=url, file_hash=file_hash)
-        with open(class_index_path) as ff:
-            if is_imagenet:
-                CLASS_INDEX_IMAGENET = json.load(ff)
-            else:
-                CLASS_INDEX_IMAGENET21K = json.load(ff)
-    class_index = CLASS_INDEX_IMAGENET if is_imagenet else CLASS_INDEX_IMAGENET21K
+#         class_index_path = os.path.join(os.path.expanduser("~/.keras/datasets"), os.path.basename(url))
+#         print(">>>> Trying to load index file:", class_index_path)
+#         class_index_path = get_file(origin=url, file_hash=file_hash)
+#         with open(class_index_path) as ff:
+#             if is_imagenet:
+#                 CLASS_INDEX_IMAGENET = json.load(ff)
+#             else:
+#                 CLASS_INDEX_IMAGENET21K = json.load(ff)
+#     class_index = CLASS_INDEX_IMAGENET if is_imagenet else CLASS_INDEX_IMAGENET21K
+
+#     results = []
+#     for pred in preds:
+#         top_indices = pred.argsort()[-top:][::-1]
+#         result = [tuple(class_index[str(i)]) + (pred[i],) for i in top_indices]
+#         result.sort(key=lambda x: x[2], reverse=True)
+#         results.append(result)
+#     return results
+
+def decode_predictions(preds_list, top=5):
+    """Decode predictions for a list of prediction tensors with varying shapes."""
+    decoded_results = []
+    
+    for preds in preds_list:
+        decoded_result = decode_single_predictions(preds, top)
+        decoded_results.append(decoded_result)
+    
+    return decoded_results
+
+def decode_single_predictions(preds, top=5):
+    """Similar function for decoding single predictions."""
+    # preds = np.array(preds.detach() if hasattr(preds, "detach") else preds)
+    # if len(preds.shape) != 2 or (preds.shape[-1] not in [1000, 21843, 21841]):
+    #     print("[Error] not imagenet or imagenet21k prediction, not supported")
+    #     return
+
+    # is_imagenet = preds.shape[-1] == 1000
+
+    # global CLASS_INDEX_IMAGENET
+    # global CLASS_INDEX_IMAGENET21K
+    # if (is_imagenet and CLASS_INDEX_IMAGENET is None) or (not is_imagenet and CLASS_INDEX_IMAGENET21K is None):
+    #     if is_imagenet:
+    #         url = "https://github.com/leondgarse/keras_cv_attention_models/releases/download/assets/imagenet_class_index.json"
+    #         file_hash = "c2c37ea517e94d9795004a39431a14cb"
+    #     else:
+    #         url = "https://github.com/leondgarse/keras_cv_attention_models/releases/download/assets/imagenet21k_class_index.json"
+    #         file_hash = "a07173727548feaea3cc855ed6341a4f"
+
+    #     class_index_path = os.path.join(os.path.expanduser("~/.keras/datasets"), os.path.basename(url))
+    #     print(">>>> Trying to load index file:", class_index_path)
+    #     class_index_path = get_file(origin=url, file_hash=file_hash)
+    #     with open(class_index_path) as ff:
+    #         if is_imagenet:
+    #             CLASS_INDEX_IMAGENET = json.load(ff)
+    #         else:
+    #             CLASS_INDEX_IMAGENET21K = json.load(ff)
+    # class_index = CLASS_INDEX_IMAGENET if is_imagenet else CLASS_INDEX_IMAGENET21K
 
     results = []
+
     for pred in preds:
         top_indices = pred.argsort()[-top:][::-1]
         result = [tuple(class_index[str(i)]) + (pred[i],) for i in top_indices]

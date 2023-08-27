@@ -4,7 +4,7 @@ from keras_cv_attention_models.version import __version__
 from keras_cv_attention_models import plot_func
 from keras_cv_attention_models import attention_layers
 
-from keras_cv_attention_models import resnest
+
 from keras_cv_attention_models import download_and_load
 from keras_cv_attention_models import imagenet
 from keras_cv_attention_models import test_images
