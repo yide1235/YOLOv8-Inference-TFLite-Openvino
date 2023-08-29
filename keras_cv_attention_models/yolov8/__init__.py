@@ -6,6 +6,7 @@ from keras_cv_attention_models.yolov8.yolov8 import (
     YOLOV8_M,
     YOLOV8_L,
     YOLOV8_X,
+    YOLOV8_X6,
     switch_to_deploy,
 )
 from keras_cv_attention_models.yolov8.yolo_nas import YOLO_NAS, YOLO_NAS_S, YOLO_NAS_M, YOLO_NAS_L
@@ -95,6 +96,7 @@ YOLOV8_S.__doc__ = YOLOV8_N.__doc__
 YOLOV8_M.__doc__ = YOLOV8_N.__doc__
 YOLOV8_L.__doc__ = YOLOV8_N.__doc__
 YOLOV8_X.__doc__ = YOLOV8_N.__doc__
+YOLOV8_X6.__doc__ = YOLOV8_N.__doc__
 
 YOLO_NAS.__doc__ = YOLOV8.__doc__
 YOLO_NAS_S.__doc__ = YOLOV8_N.__doc__
