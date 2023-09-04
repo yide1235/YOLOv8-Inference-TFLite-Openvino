@@ -1,6 +1,10 @@
-# yolov8-object-tracking 
+# yolov8-object-tracking
+#### Implementation of Yolov8l tracking with tflite in C++
 #### [ultralytics==8.0.0]
 
+### Phase:
+currently make yolov8l tracking integrated with quantized tflite pretrain
+then converst everythiong to C++ to achieve faster speed
 
 ### Features
 - Object Tracks
@@ -50,16 +54,8 @@ python ./detect_and_trk.py model=yolov8m.pt source=1 show=True
 
 
 ### Results
-<table>
-  <tr>
-    <td>YOLOv8s Object Tracking</td>
-    <td>YOLOv8m Object Tracking</td>
-  </tr>
-  <tr>
-    <td><img src="https://user-images.githubusercontent.com/62513924/211671576-7d39829a-f8f5-4e25-b30a-530548c11a24.png"></td>
-    <td><img src="https://user-images.githubusercontent.com/62513924/211672010-7415ef8b-7941-4545-8434-377d94675299.png"></td>
-  </tr>
- </table>
+Initial result using yolov8l quantized tflite pretrain model:
+![](./assets/video_short.gif)
 
 ### References
 - https://github.com/abewley/sort
