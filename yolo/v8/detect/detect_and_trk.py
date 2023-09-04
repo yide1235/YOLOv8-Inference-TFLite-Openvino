@@ -4,13 +4,16 @@ import hydra
 import torch
 import cv2
 from random import randint
-from sort import *
+
 from ultralytics.yolo.engine.predictor import BasePredictor
 from ultralytics.yolo.utils import DEFAULT_CONFIG, ROOT, ops
 from ultralytics.yolo.utils.checks import check_imgsz
 from ultralytics.yolo.utils.plotting import Annotator, colors, save_one_box
 
 
+
+
+#this is just for the sorting part of code
 import os
 import numpy as np
 import matplotlib
@@ -298,6 +301,14 @@ def parse_args():
 
 
 
+#end of sorting code
+
+
+
+
+
+
+
 tracker = None
 
 def init_tracker():
@@ -428,7 +439,10 @@ class DetectionPredictor(BasePredictor):
 
 
 @hydra.main(version_base=None, config_path=str(DEFAULT_CONFIG.parent), config_name=DEFAULT_CONFIG.name)
+
+
 def predict(cfg):
+    print(cfg)
     init_tracker()
     random_color_list()
         
