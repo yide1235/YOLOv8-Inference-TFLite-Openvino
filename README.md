@@ -23,7 +23,7 @@ https://github.com/yide1235/Yolov8-tracking-tflite-CPP.git
 ```
 
 ### Results
-Initial result using yolov8l quantized tflite pretrain model for stereo images:
+Initial result using yolov8l quantized tflite pretrain model for stereo images(ignore the confidence, i manually set it because tracking doesnot need confidence):
 ![](./assets/sheared_image11.jpg)
 ![](./assets/sheared_image22.jpg)
 ![](./assets/sheared_image1.jpg)
