@@ -287,6 +287,13 @@ class Sort(object):
             #remove dead tracklet
             if(trk.time_since_update >self.max_age):
                 self.trackers.pop(i)
+
+
+        # print(dets)
+        # print(ret)
+
+
+        
         if(len(ret) > 0):
             return np.concatenate(ret)
         return np.empty((0,6))
@@ -319,7 +326,7 @@ def init_tracker():
     
     sort_max_age = 5
     sort_min_hits = 2
-    sort_iou_thresh = 0.01
+    sort_iou_thresh = 0
     tracker =Sort(max_age=sort_max_age,min_hits=sort_min_hits,iou_threshold=sort_iou_thresh)
 
 
@@ -692,8 +699,7 @@ class BboxesPlotter:
             cls_name=coco_names[int(cls_id)]
             tracking_id=i[8]
 
-            # label = f'{tracking_id}{" "+cls_name} {confidence:.2f}'
-            label = f'{tracking_id}{" "+cls_name}'
+            label = f'{tracking_id}{" "+cls_name} {confidence:.2f}'
             color = self.colors(cls_id, True)
 
             im0 = self.plot_one_box(bbox, im0, color, label)
@@ -728,10 +734,11 @@ if __name__ == '__main__':
         results = yolo.detect(file)
         # print(results)
  
-        print(f'Processing {file} - time: {time.time() - start} s')
+        
 
         save_name = output_folder + file.split('/')[-1]
         plotter.plot_bboxes(file, results, save_name)
 
+        print(f'Processing {file} - time: {time.time() - start} s')
 
 
