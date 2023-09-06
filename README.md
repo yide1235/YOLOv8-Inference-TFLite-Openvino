@@ -23,8 +23,10 @@ https://github.com/yide1235/Yolov8-tracking-tflite-CPP.git
 ```
 
 ### Results
-Initial result using yolov8l quantized tflite pretrain model:
-![](./assets/video_short.gif)
+Initial result using yolov8l quantized tflite pretrain model for stereo images:
+![](./assets/sheared_image1.jpg)
+![](./assets/sheared_image2.jpg)
+
 
 ### References
 - https://github.com/abewley/sort
