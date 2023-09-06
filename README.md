@@ -1,6 +1,6 @@
 # yolov8-object-tracking
 #### Implementation of Yolov8l tracking with tflite in C++
-#### [ultralytics==8.0.0]
+
 
 ### Phase:
 currently make yolov8l tracking integrated with quantized tflite pretrain
