@@ -422,6 +422,7 @@ class DetectionPredictor(BasePredictor):
         print(dets_to_sort)
 
         tracked_dets = tracker.update(dets_to_sort)
+        print(tracked_dets)
         tracks =tracker.getTrackers()
 
         # for track in tracks:
@@ -433,7 +434,7 @@ class DetectionPredictor(BasePredictor):
         #                 for i,_ in  enumerate(track.centroidarr) 
         #                     if i < len(track.centroidarr)-1 ] 
      
-        print(tracked_dets)
+        
 
         if len(tracked_dets)>0:
             bbox_xyxy = tracked_dets[:,:4]
