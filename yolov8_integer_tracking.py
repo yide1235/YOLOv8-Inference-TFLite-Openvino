@@ -522,9 +522,11 @@ class YOLOV8:
 
             
                 for bbox, sscore in zip(box, score):
-                    if i==0:
-                        result=np.hstack((bbox, sscore, i))
-                        results.append(result)
+                    # if i==0:
+                    #     result=np.hstack((bbox, sscore, i))
+                    #     results.append(result)
+                    result=np.hstack((bbox, sscore, i))
+                    results.append(result)
         # print(results)
         
         results=np.array(results)
@@ -694,12 +696,12 @@ class BboxesPlotter:
         for i in results:
             bbox=i[:4]
             # confidence=i[5]
-            confidence=0.111
             cls_id=i[4]
             cls_name=coco_names[int(cls_id)]
             tracking_id=i[8]
 
-            label = f'{tracking_id}{" "+cls_name} {confidence:.2f}'
+            # label = f'{tracking_id}{" "+cls_name} {confidence:.2f}'
+            label = f'{tracking_id}{" "+cls_name}'
             color = self.colors(cls_id, True)
 
             im0 = self.plot_one_box(bbox, im0, color, label)
@@ -715,7 +717,7 @@ class BboxesPlotter:
 
 
 if __name__ == '__main__':
-    image_folder = '/home/myd/Desktop/pair2'
+    image_folder = '/home/myd/Desktop/7'
     output_folder = './out/'
     
 
