@@ -319,7 +319,7 @@ def init_tracker():
     
     sort_max_age = 5
     sort_min_hits = 2
-    sort_iou_thresh = 0
+    sort_iou_thresh = 0.01
     tracker =Sort(max_age=sort_max_age,min_hits=sort_min_hits,iou_threshold=sort_iou_thresh)
 
 
@@ -692,7 +692,8 @@ class BboxesPlotter:
             cls_name=coco_names[int(cls_id)]
             tracking_id=i[8]
 
-            label = f'{tracking_id}{" "+cls_name} {confidence:.2f}'
+            # label = f'{tracking_id}{" "+cls_name} {confidence:.2f}'
+            label = f'{tracking_id}{" "+cls_name}'
             color = self.colors(cls_id, True)
 
             im0 = self.plot_one_box(bbox, im0, color, label)
