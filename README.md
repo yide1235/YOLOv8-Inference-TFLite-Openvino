@@ -3,7 +3,7 @@
 
 
 ### Phase:
-currently make yolov8l tracking integrated with quantized tflite pretrain
+currently make yolov8l tracking integrated with quantized tflite pretrain(finished)
 then converst everythiong to C++ to achieve faster speed
 
 ### Features
