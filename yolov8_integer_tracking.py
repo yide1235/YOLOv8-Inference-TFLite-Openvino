@@ -326,7 +326,7 @@ def init_tracker():
     
     sort_max_age = 5
     sort_min_hits = 2
-    sort_iou_thresh = 0
+    sort_iou_thresh = 0.1
     tracker =Sort(max_age=sort_max_age,min_hits=sort_min_hits,iou_threshold=sort_iou_thresh)
 
 
@@ -356,7 +356,7 @@ class YOLOV8:
         # self.interpreter = tflite.Interpreter(model_path='./yolov8l_float32.tflite')
         self.interpreter = tflite.Interpreter(model_path='./yolov8l_integer_quant.tflite')
 
-        # self.interpreter = tflite.Interpreter(model_path='models/yolov8n_int8.tflite')
+        # self.interpreter = tflite.Interpreter(model_path='./yolov8s_integer_quant.tflite')
         # self.interpreter = tflite.Interpreter(model_path='models/yolov8l_int8.tflite',
         #                 experimental_delegates=[tflite.load_delegate('vx_delegate.so')])
         self.interpreter.allocate_tensors()
@@ -374,7 +374,7 @@ class YOLOV8:
         self.img_width = 0
 
         # parameters
-        self.conf_thres = 0.30
+        self.conf_thres = 0.25
         self.overlapThresh = 0.45
 
     def preprocess(self, image):
@@ -421,66 +421,13 @@ class YOLOV8:
         
         results = self.postprocess(output_data)
 
-      
-
-        # if object is not None:  
-        #     results = [result for result in results if result['cls_name'] == object]
-
-        # return results
-        # print(results)
-        # for i in results:
-        #     temp=i[:4]
-        #     temp=temp.astype(int)
-        #     i[:4]=temp
-        # print(results)
-        
-
-
-
-        # sorted=np.argsort(results[:, 4])
-        # sorted_reverse=sorted[::-1]
-
-        # results2=results[sorted_reverse]
-
-        # # print(results)
-
-        # print(results2)
-
-        tracked_dets = tracker.update(results)
+        #wont use tracking
+        # tracked_dets = tracker.update(results)
         # tracks =tracker.getTrackers()
-        tracks =tracker.getTrackers()
-
-        # print(tracked_dets)
-
-        # print(tracked_dets)
-        #cause tracked_dets is always [something, 9]
-        # tracked_dets[:, 7]=
-        # print(results.shape)
-        # print(tracked_dets.shape)
-        # track_result=np.concatenate((results,tracked_dets[:,8]),axis=1)
-        # print(tracked_dets)
-
-
-        # #old
-        # temp=tracked_dets[:,8][::-1]
-        # # # print(temp.shape)
-        # temp=temp[:, None]
-        # # # print(temp.shape)
-
-        # track_result = np.concatenate((results, temp), axis=1)
-        # # print(track_result.shape)
-
-        # #so the track_result is a numpy array, each row is:
-        # #[a,b,c,d, confidence, class_cls, id]
-        # #end of old
-        # return track_result
-
-
-        #new
-        #######import: tracked_dets should be a list/numpy array, each row contains: 4 coordinate, cls_id, confidence, 0,0, track_id
-        
-        # print(tracked_dets)
-        return tracked_dets
+        #wont
+        # print(results)        
+ 
+        return results
     
     def postprocess(self, output_data):
         output = np.squeeze(output_data).T
@@ -621,6 +568,186 @@ class YOLOV8:
         return boxes
 
 
+    # def calculate_covariance(self,a,b):
+    #     #assume a b are already var/mean
+
+
+
+    def output_id(self, image, results):
+
+        # load image
+        if type(image) == str:  # Load from file path
+            if not os.path.isfile(image):
+                raise ValueError("Input image file path (", image, ") does not exist.")
+            image = cv.imread(image)
+        elif isinstance(image, np.ndarray):  # Use given NumPy array
+            image = image.copy()
+        else:
+            raise ValueError("Invalid image input. Only file paths or a NumPy array accepted.")
+        
+
+        #so results is [boundingbox, confidence, class_id]
+        # print((results))
+        # print("11111111111111")
+        len_results=len(results)
+        unique_ids=[]
+        for i in range(len_results):
+            #cls_id
+            cls_id=results[i][5]
+            #end of cls_id
+
+            #confidence
+            confidence=results[i][4]
+            
+            #ratio
+            x=results[i][:4]
+            ratio1=np.abs(x[0]-x[2])
+            ratio2=np.abs(x[1]-x[3])
+            if ratio1>ratio2:
+                ratio=ratio2/ratio1
+            elif ratio1<ratio2:
+                ratio=ratio1/ratio2
+            else:
+                ratio=1
+            # ratio=min_ratio/max_ratio
+            #end of ratio
+
+            #covirance:RGB
+            x1, y1, x2, y2=map(int, x)
+
+            detected=image[y1:y2, x1:x2]
+            
+            width=np.abs(y1-y2)
+            height=np.abs(x1-x2)
+
+            # cv.imshow('this',detected)
+            # cv.waitKey(0)
+            # cv.destroyAllWindows()
+
+            #now divide detected into 4
+            split=2
+            detected1=detected[0: int(width/split), 0: int(height/split)] #left top
+            detected2=detected[0: int(width/split), int(height/split):height] #right top
+            detected3=detected[int(width/split): width, 0: int(height/split)] #left down
+            detected4=detected[int(width/split): width, int(height/split):height] #right down
+            # cv.imshow('this',detected)
+            # cv.waitKey(0)
+            # cv.imshow('this',detected1)
+            # cv.waitKey(0)
+            # cv.imshow('this',detected2)
+            # cv.waitKey(0)
+            # cv.imshow('this',detected3)
+            # cv.waitKey(0)
+            # cv.imshow('this',detected4)
+            # cv.waitKey(0)
+            # cv.destroyAllWindows()
+
+            # sigma1=np.var(detected1) #left top
+            # sigma2=np.var(detected2) #right top
+            # sigma3=np.var(detected3) #left down
+            # sigma4=np.var(detected4) #right down
+            
+            b1, g1, r1= cv.split(detected1)
+            # sigma1=np.array([np.var(b1), np.var(g1), np.var(r1)])
+            b2, g2, r2= cv.split(detected2)
+            # sigma2=np.array([np.var(b2), np.var(g2), np.var(r2)])
+            b3, g3, r3= cv.split(detected3)
+            # sigma3=np.array([np.var(b3), np.var(g3), np.var(r3)])
+            b4, g4, r4= cv.split(detected4)
+            # sigma4=np.array([np.var(b4), np.var(g4), np.var(r4)])
+
+            #sigma* is 1x3
+
+            #b covriance matrix is:
+            # print(round(height/2))
+            # print(round(width/2))
+            # print(b1.shape)
+            # print(b2.shape)
+            # print(b3.shape)
+            # b=np.array([b1*b2, b1*b3, b1*b4, b2*b3, b2*b4, b3*b4])
+            # g=np.array([g1*g2, g1*g3, g1*g4, g2*g3, g2*g4, g3*g4])
+            # r=np.array([r1*r2, r1*r3, r1*r4, r2*r3, r2*r4, r3*r4])
+
+
+            b=[b1,b2,b3,b4]
+            g=[g1,g2,g3,g4]
+            r=[r1,r2,r3,r4]
+
+            # print(b)
+            # print(g)
+            # print(r)
+
+
+            m=round(width/2)+1
+            
+            n=round(height/2)+1
+
+            b_after=[]
+            g_after=[]
+            r_after=[]
+
+            for i in b:
+
+                a=i.shape[0]
+                b=i.shape[1]
+
+                pad_rows=max(0, m-a)
+                pad_cols=max(0,n-b)
+
+                i = np.pad(i, ((0, pad_rows), (0, pad_cols)), mode='constant', constant_values=1)
+                b_after.append(i)
+
+            for i2 in g:
+
+                a2=i2.shape[0]
+                b2=i2.shape[1]
+
+                pad_rows2=max(0, m-a2)
+                pad_cols2=max(0,n-b2)
+
+                i2 = np.pad(i2, ((0, pad_rows2), (0, pad_cols2)), mode='constant', constant_values=1)
+                g_after.append(i2)
+
+            for i3 in r:
+
+                a3=i3.shape[0]
+                b3=i3.shape[1]
+
+                pad_rows3=max(0, m-a3)
+                pad_cols3=max(0,n-b3)
+
+                i3 = np.pad(i3, ((0, pad_rows3), (0, pad_cols3)), mode='constant', constant_values=1)
+                r_after.append(i3)
+
+            b_vector=np.array([b_after[0]*b_after[1], b_after[0]*b_after[2], b_after[0]*b_after[3], b_after[1]*b_after[2], b_after[1]*b_after[3], b_after[2]*b_after[3]])
+            g_vector=np.array([g_after[0]*g_after[1], g_after[0]*g_after[2], g_after[0]*g_after[3], g_after[1]*g_after[2], g_after[1]*g_after[3], g_after[2]*g_after[3]])
+            r_vector=np.array([r_after[0]*r_after[1], r_after[0]*r_after[2], r_after[0]*r_after[3], r_after[1]*r_after[2], r_after[1]*r_after[3], r_after[2]*r_after[3]])
+
+            # print(b_vector[0])
+
+            b_var=[]
+            for b in b_vector:
+                b_var.append(np.var(b)/(width*height*2)*100)
+
+            g_var=[]
+            for g in g_vector:
+                g_var.append(np.var(g)/(width*height*2)*100)
+
+            r_var=[]
+            for r in r_vector:
+                r_var.append(np.var(r)/(width*height*2)*100)
+            
+            
+            # print(b_var.shape)
+            # print(g_var)
+            # print(r_var)
+            unique_id=np.hstack((int(cls_id),confidence, b_var, g_var, r_var))
+            # unique_id=[b_var, g_var, r_var]
+            unique_ids.append(unique_id)
+
+        return unique_ids
+
+
 class BboxesPlotter:
     def __init__(self) -> None:
         self.colors = self.Colors()
@@ -693,15 +820,16 @@ class BboxesPlotter:
         #results now is tracked_dets
         #######import: tracked_dets should be a list/numpy array, each row contains: 4 coordinate, cls_id, confidence, 0,0, track_id
         # print(results)
+
         for i in results:
             bbox=i[:4]
-            # confidence=i[5]
-            cls_id=i[4]
+            confidence=i[4]
+            cls_id=i[5]
             cls_name=coco_names[int(cls_id)]
-            tracking_id=i[8]
+          
 
-            # label = f'{tracking_id}{" "+cls_name} {confidence:.2f}'
-            label = f'{tracking_id}{" "+cls_name}'
+            label = f'{cls_id}{" "+cls_name} {confidence:.2f}'
+     
             color = self.colors(cls_id, True)
 
             im0 = self.plot_one_box(bbox, im0, color, label)
@@ -717,23 +845,29 @@ class BboxesPlotter:
 
 
 if __name__ == '__main__':
-    image_folder = '/home/myd/Desktop/7'
+    image_folder = '/home/myd/Desktop/frid'
     output_folder = './out/'
     
 
-    init_tracker()
+    # init_tracker()
 
     yolo = YOLOV8()
     plotter = BboxesPlotter()
 
     image_files = glob.glob(f'{image_folder}/*.jpg')
+    sorted_image_files = sorted(image_files)
 
-    for file in image_files:
+
+    for file in sorted_image_files:
         start = time.time()
         
         
 
         results = yolo.detect(file)
+
+        unique_id=yolo.output_id(file,results)
+        print(unique_id)
+
         # print(results)
  
         
