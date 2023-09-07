@@ -354,9 +354,9 @@ model_name = 'yolov8l_integer_quant'
 class YOLOV8:
     def __init__(self) -> None:
         # self.interpreter = tflite.Interpreter(model_path='./yolov8l_float32.tflite')
-        self.interpreter = tflite.Interpreter(model_path='./yolov8l_integer_quant.tflite')
+        # self.interpreter = tflite.Interpreter(model_path='./yolov8x6_float32.tflite')
 
-        # self.interpreter = tflite.Interpreter(model_path='./yolov8s_integer_quant.tflite')
+        self.interpreter = tflite.Interpreter(model_path='./yolov8l_integer_quant.tflite')
         # self.interpreter = tflite.Interpreter(model_path='models/yolov8l_int8.tflite',
         #                 experimental_delegates=[tflite.load_delegate('vx_delegate.so')])
         self.interpreter.allocate_tensors()
@@ -426,7 +426,7 @@ class YOLOV8:
         # tracks =tracker.getTrackers()
         #wont
         # print(results)        
- 
+        # return tracked_dets
         return results
     
     def postprocess(self, output_data):
@@ -591,6 +591,7 @@ class YOLOV8:
         # print("11111111111111")
         len_results=len(results)
         unique_ids=[]
+    
         for i in range(len_results):
             #cls_id
             cls_id=results[i][5]
@@ -623,127 +624,292 @@ class YOLOV8:
             # cv.imshow('this',detected)
             # cv.waitKey(0)
             # cv.destroyAllWindows()
+            # print(detected.shape)
 
-            #now divide detected into 4
-            split=2
-            detected1=detected[0: int(width/split), 0: int(height/split)] #left top
-            detected2=detected[0: int(width/split), int(height/split):height] #right top
-            detected3=detected[int(width/split): width, 0: int(height/split)] #left down
-            detected4=detected[int(width/split): width, int(height/split):height] #right down
-            # cv.imshow('this',detected)
-            # cv.waitKey(0)
-            # cv.imshow('this',detected1)
-            # cv.waitKey(0)
-            # cv.imshow('this',detected2)
-            # cv.waitKey(0)
-            # cv.imshow('this',detected3)
-            # cv.waitKey(0)
-            # cv.imshow('this',detected4)
-            # cv.waitKey(0)
-            # cv.destroyAllWindows()
 
-            # sigma1=np.var(detected1) #left top
-            # sigma2=np.var(detected2) #right top
-            # sigma3=np.var(detected3) #left down
-            # sigma4=np.var(detected4) #right down
+
+
+
+            #average color:
+            # average_color = np.mean(detected, axis=(0, 1)) 
+            # unique_id=np.hstack((confidence, average_color))
+            # print(average_color)
+
+
+            # unique_ids.append(average_color)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            #normalize image:
+
+            # bn, gn, rn=cv.split(detected)
+            # max_rgb = np.maximum(np.maximum(rn, gn), bn)
+
+            # nr=rn.astype(float)/max_rgb
+            # ng = gn.astype(float) / max_rgb
+            # nb = bn.astype(float) / max_rgb
+
+            # normalized_detected=cv.merge((nb,ng,nr))
+
+            # print(normalized_detected)
+
+            # if normalized_detected.shape[0] and normalized_detected.shape[1]:
+
+            #     #this is four
+            #     #now divide detected into 4
+            #     split=2
+            #     detected1=normalized_detected[0: int(width/split), 0: int(height/split)] #left top
+            #     detected2=normalized_detected[0: int(width/split), int(height/split):height] #right top
+            #     detected3=normalized_detected[int(width/split): width, 0: int(height/split)] #left down
+            #     detected4=normalized_detected[int(width/split): width, int(height/split):height] #right down
             
-            b1, g1, r1= cv.split(detected1)
-            # sigma1=np.array([np.var(b1), np.var(g1), np.var(r1)])
-            b2, g2, r2= cv.split(detected2)
-            # sigma2=np.array([np.var(b2), np.var(g2), np.var(r2)])
-            b3, g3, r3= cv.split(detected3)
-            # sigma3=np.array([np.var(b3), np.var(g3), np.var(r3)])
-            b4, g4, r4= cv.split(detected4)
-            # sigma4=np.array([np.var(b4), np.var(g4), np.var(r4)])
+            if detected.shape[0] and detected.shape[1]:
 
-            #sigma* is 1x3
+                #this is four
+                #now divide detected into 4
+                split=2
+                detected1=detected[0: int(width/split), 0: int(height/split)] #left top
+                detected2=detected[0: int(width/split), int(height/split):height] #right top
+                detected3=detected[int(width/split): width, 0: int(height/split)] #left down
+                detected4=detected[int(width/split): width, int(height/split):height] #right down
 
-            #b covriance matrix is:
-            # print(round(height/2))
-            # print(round(width/2))
-            # print(b1.shape)
-            # print(b2.shape)
-            # print(b3.shape)
-            # b=np.array([b1*b2, b1*b3, b1*b4, b2*b3, b2*b4, b3*b4])
-            # g=np.array([g1*g2, g1*g3, g1*g4, g2*g3, g2*g4, g3*g4])
-            # r=np.array([r1*r2, r1*r3, r1*r4, r2*r3, r2*r4, r3*r4])
+                # cv.imshow('this',detected)
+                # cv.waitKey(0)
+                # cv.imshow('this',detected1)
+                # cv.waitKey(0)
+                # cv.imshow('this',detected2)
+                # cv.waitKey(0)
+                # cv.imshow('this',detected3)
+                # cv.waitKey(0)
+                # cv.imshow('this',detected4)
+                # cv.waitKey(0)
+                # cv.destroyAllWindows()
 
+                # sigma1=np.var(detected1) #left top
+                # sigma2=np.var(detected2) #right top
+                # sigma3=np.var(detected3) #left down
+                # sigma4=np.var(detected4) #right down
 
-            b=[b1,b2,b3,b4]
-            g=[g1,g2,g3,g4]
-            r=[r1,r2,r3,r4]
-
-            # print(b)
-            # print(g)
-            # print(r)
-
-
-            m=round(width/2)+1
             
-            n=round(height/2)+1
 
-            b_after=[]
-            g_after=[]
-            r_after=[]
+                b1, g1, r1= cv.split(detected1)
 
-            for i in b:
+                # sigma1=np.array([np.var(b1), np.var(g1), np.var(r1)])
+                b2, g2, r2= cv.split(detected2)
+                # sigma2=np.array([np.var(b2), np.var(g2), np.var(r2)])
+                b3, g3, r3= cv.split(detected3)
+                # sigma3=np.array([np.var(b3), np.var(g3), np.var(r3)])
+                b4, g4, r4= cv.split(detected4)
+                # sigma4=np.array([np.var(b4), np.var(g4), np.var(r4)])
 
-                a=i.shape[0]
-                b=i.shape[1]
+                #sigma* is 1x3
 
-                pad_rows=max(0, m-a)
-                pad_cols=max(0,n-b)
+                #first method
+                #b covriance matrix is:
+                # print(round(height/2))
+                # print(round(width/2))
 
-                i = np.pad(i, ((0, pad_rows), (0, pad_cols)), mode='constant', constant_values=1)
-                b_after.append(i)
+                # print
 
-            for i2 in g:
+                b=np.array([np.var(b1)*np.var(b2), np.var(b1)*np.var(b3), np.var(b1)*np.var(b4), np.var(b2)*np.var(b3), np.var(b2)*np.var(b4), np.var(b3)*np.var(b4)])
+                g=np.array([np.var(g1)*np.var(g2), np.var(g1)*np.var(g3), np.var(g1)*np.var(g4), np.var(g2)*np.var(g3), np.var(g2)*np.var(g4), np.var(g3)*np.var(g4)])
+                r=np.array([np.var(r1)*np.var(r2), np.var(r1)*np.var(r3), np.var(r1)*np.var(r4), np.var(r2)*np.var(r3), np.var(r2)*np.var(r4), np.var(r3)*np.var(r4)])
+                
+                # print(b)                
 
-                a2=i2.shape[0]
-                b2=i2.shape[1]
 
-                pad_rows2=max(0, m-a2)
-                pad_cols2=max(0,n-b2)
 
-                i2 = np.pad(i2, ((0, pad_rows2), (0, pad_cols2)), mode='constant', constant_values=1)
-                g_after.append(i2)
 
-            for i3 in r:
+                b=b/(width*height)
+                b=b.astype(int)
+                g=g/(width*height)
+                g=g.astype(int)
+                r=r/(width*height)
+                r=r.astype(int)
+        
+            #     # print(b)
 
-                a3=i3.shape[0]
-                b3=i3.shape[1]
+            #     # b=b*10000
+            #     # g=g*10000
+            #     # r=r*10000
 
-                pad_rows3=max(0, m-a3)
-                pad_cols3=max(0,n-b3)
 
-                i3 = np.pad(i3, ((0, pad_rows3), (0, pad_cols3)), mode='constant', constant_values=1)
-                r_after.append(i3)
+            #     #rank
 
-            b_vector=np.array([b_after[0]*b_after[1], b_after[0]*b_after[2], b_after[0]*b_after[3], b_after[1]*b_after[2], b_after[1]*b_after[3], b_after[2]*b_after[3]])
-            g_vector=np.array([g_after[0]*g_after[1], g_after[0]*g_after[2], g_after[0]*g_after[3], g_after[1]*g_after[2], g_after[1]*g_after[3], g_after[2]*g_after[3]])
-            r_vector=np.array([r_after[0]*r_after[1], r_after[0]*r_after[2], r_after[0]*r_after[3], r_after[1]*r_after[2], r_after[1]*r_after[3], r_after[2]*r_after[3]])
+            #     # b_sort=np.sort(b)
+            #     # # print(np.sort(b))
+            #     # len_b_sort=len(b_sort)
+    
+            #     # for i in range(len_b_sort):
+            #     #     for j in range(len(b)):
+            #     #         # print(b[j])
+            #     #         # print(b_sort[i])
+            #     #         if b[j]==b_sort[i]:
+            #     #             b[j]=(i+1)
+                
+            #     # g_sort=np.sort(g)
+            #     # # print(np.sort(g))
+            #     # len_g_sort=len(g_sort)
+    
+            #     # for i in range(len_g_sort):
+            #     #     for j in range(len(g)):
+            #     #         # print(g[j])
+            #     #         # print(g_sort[i])
+            #     #         if g[j]==g_sort[i]:
+            #     #             g[j]=(i+1)
 
-            # print(b_vector[0])
+            #     # r_sort=np.sort(r)
+            #     # # print(np.sort(r))
+            #     # len_r_sort=len(r_sort)
+    
+            #     # for i in range(len_r_sort):
+            #     #     for j in range(len(r)):
+            #     #         # print(r[j])
+            #     #         # print(r_sort[i])
+            #     #         if r[j]==r_sort[i]:
+            #     #             r[j]=(i+1)
 
-            b_var=[]
-            for b in b_vector:
-                b_var.append(np.var(b)/(width*height*2)*100)
 
-            g_var=[]
-            for g in g_vector:
-                g_var.append(np.var(g)/(width*height*2)*100)
 
-            r_var=[]
-            for r in r_vector:
-                r_var.append(np.var(r)/(width*height*2)*100)
-            
-            
-            # print(b_var.shape)
-            # print(g_var)
-            # print(r_var)
-            unique_id=np.hstack((int(cls_id),confidence, b_var, g_var, r_var))
-            # unique_id=[b_var, g_var, r_var]
-            unique_ids.append(unique_id)
+                #bucketize
+                # print(b)
+
+                b_max=np.max(b)
+                # print(b_max)
+                b_min=np.min(b)
+                # print(b_min)
+                binterval=(b_max-b_min)/(len(b)-1)
+                # print(binterval)
+
+                for i in range(len(b)):
+                    # print(((b[i]-b_min)/interval))
+                    # print((b[i]-b_min)/binterval+1)
+                    # print(b[i])
+                    b[i]=(b[i]-b_min)/binterval+1
+
+
+                g_max=np.max(g)
+                g_min=np.min(g)
+                ginterval=(g_max-g_min)/(len(g)-1)
+                # print(ginterval)
+                for i in range(len(g)):
+                    g[i]=(g[i]-g_min)/ginterval+1
+
+                r_max=np.max(r)
+                r_min=np.min(r)
+                
+                rinterval=(r_max-r_min)/(len(r)-1)
+                # print(rinterval)
+                for i in range(len(r)):
+                    r[i]=(r[i]-r_min)/rinterval+1
+
+                temp=np.hstack((b, g, r))
+                unique_id=np.linalg.norm(temp)
+                unique_id=np.hstack((confidence, unique_id))
+
+
+
+            #     # unique_id=np.hstack((b,g,r))
+                # unique_id=np.hstack((int(cls_id),confidence, b, g, r))
+                unique_ids.append([unique_id])
+
+
+
+
+
+
+
+
+                #second method
+                # b=[b1,b2,b3,b4]
+                # g=[g1,g2,g3,g4]
+                # r=[r1,r2,r3,r4]
+
+                # # print(b)
+                # # print(g)
+                # # print(r)
+
+
+                # m=round(width/2)+1
+                
+                # n=round(height/2)+1
+
+                # b_after=[]
+                # g_after=[]
+                # r_after=[]
+
+                # for i in b:
+
+                #     a=i.shape[0]
+                #     b=i.shape[1]
+
+                #     pad_rows=max(0, m-a)
+                #     pad_cols=max(0,n-b)
+
+                #     i = np.pad(i, ((0, pad_rows), (0, pad_cols)), mode='constant', constant_values=1)
+                #     b_after.append(i)
+
+                # for i2 in g:
+
+                #     a2=i2.shape[0]
+                #     b2=i2.shape[1]
+
+                #     pad_rows2=max(0, m-a2)
+                #     pad_cols2=max(0,n-b2)
+
+                #     i2 = np.pad(i2, ((0, pad_rows2), (0, pad_cols2)), mode='constant', constant_values=1)
+                #     g_after.append(i2)
+
+                # for i3 in r:
+
+                #     a3=i3.shape[0]
+                #     b3=i3.shape[1]
+
+                #     pad_rows3=max(0, m-a3)
+                #     pad_cols3=max(0,n-b3)
+
+                #     i3 = np.pad(i3, ((0, pad_rows3), (0, pad_cols3)), mode='constant', constant_values=1)
+                #     r_after.append(i3)
+
+                # b_vector=np.array([b_after[0]*b_after[1], b_after[0]*b_after[2], b_after[0]*b_after[3], b_after[1]*b_after[2], b_after[1]*b_after[3], b_after[2]*b_after[3]])
+                # g_vector=np.array([g_after[0]*g_after[1], g_after[0]*g_after[2], g_after[0]*g_after[3], g_after[1]*g_after[2], g_after[1]*g_after[3], g_after[2]*g_after[3]])
+                # r_vector=np.array([r_after[0]*r_after[1], r_after[0]*r_after[2], r_after[0]*r_after[3], r_after[1]*r_after[2], r_after[1]*r_after[3], r_after[2]*r_after[3]])
+
+                # # print(b_vector[0])
+
+                # b_var=[]
+                # for b in b_vector:
+                #     b_var.append(np.var(b)/(width*height*2))
+
+                # g_var=[]
+                # for g in g_vector:
+                #     g_var.append(np.var(g)/(width*height*2))
+
+                # r_var=[]
+                # for r in r_vector:
+                #     r_var.append(np.var(r)/(width*height*2))
+                
+                
+                # print(b_var)
+                # print(g_var)
+                # print(r_var)
+                # unique_id=np.hstack((int(cls_id),confidence, b_var, g_var, r_var))
+                # # unique_id=[b_var, g_var, r_var]
+                # unique_ids.append(unique_id)
 
         return unique_ids
 
@@ -824,12 +990,14 @@ class BboxesPlotter:
         for i in results:
             bbox=i[:4]
             confidence=i[4]
+            # track_id=i[8]
             cls_id=i[5]
             cls_name=coco_names[int(cls_id)]
           
 
-            label = f'{cls_id}{" "+cls_name} {confidence:.2f}'
-     
+            # label = f'{cls_id}{" "+cls_name} {confidence:.2f}'
+            label =f'{confidence:.2f}'
+            # label =f'{track_id:.2f}'
             color = self.colors(cls_id, True)
 
             im0 = self.plot_one_box(bbox, im0, color, label)
@@ -842,10 +1010,11 @@ class BboxesPlotter:
 
 
 
+#single image tracking
 
 
 if __name__ == '__main__':
-    image_folder = '/home/myd/Desktop/frid'
+    image_folder = '/home/myd/Desktop/y2mate'
     output_folder = './out/'
     
 
@@ -857,16 +1026,21 @@ if __name__ == '__main__':
     image_files = glob.glob(f'{image_folder}/*.jpg')
     sorted_image_files = sorted(image_files)
 
+    
+    
 
     for file in sorted_image_files:
+
+        #should iterative twice
+
         start = time.time()
         
         
 
         results = yolo.detect(file)
 
-        unique_id=yolo.output_id(file,results)
-        print(unique_id)
+        unique_ids=yolo.output_id(file,results)
+        print(unique_ids)
 
         # print(results)
  
@@ -878,3 +1052,98 @@ if __name__ == '__main__':
         print(f'Processing {file} - time: {time.time() - start} s')
 
 
+
+#video no tracking
+# if __name__ == '__main__':
+
+
+
+#     if tf.test.is_gpu_available():
+#         print("GPU is available.")
+#     else:
+#         print("GPU is not available.")
+
+
+#     video_path = '/home/myd/Desktop/30min.mp4'  # Change this to your video file path
+#     output_path = '/home/myd/Desktop/out/video.mp4'  # Change this to your desired output video path
+#     fps = 1.0  # Process one frame per second
+
+#     yolo = YOLOV8()
+#     plotter = BboxesPlotter()
+
+#     cap = cv.VideoCapture(video_path)
+
+#     if not cap.isOpened():
+#         print("Error: Could not open video file.")
+#         exit()
+
+#     frame_rate = cap.get(cv.CAP_PROP_FPS)
+#     h, w = int(cap.get(cv.CAP_PROP_FRAME_HEIGHT)), int(cap.get(cv.CAP_PROP_FRAME_WIDTH))
+#     fourcc = cv.VideoWriter_fourcc(*'XVID')
+#     video_writer = cv.VideoWriter(output_path, fourcc, frame_rate, (w, h))
+
+#     while True:
+#         ret, frame = cap.read()
+
+#         if not ret:
+#             break
+
+#         results = yolo.detect(frame)
+
+#         # Annotate the frame
+  
+#         annotated_frame=plotter.plot_bboxes(frame, results)
+#         #cv.imwrite('/home/myd/Desktop/out/eg.jpg',annotated_frame)
+
+#         # Save the annotated frame to the output video
+ 
+#         video_writer.write(annotated_frame)
+
+#     cap.release()
+#     video_writer.release()
+
+#     print("Processing completed. Annotated video saved at:", output_path)
+    
+    
+    
+ 
+
+# #just image inference
+
+# # if __name__ == '__main__':
+# #     for scene in ['bus', 'school', 'hospital', 'dwight']:
+# #         files = glob.glob(f'src/{scene}/*.jpg')[:5]
+
+# #         yolo = YOLOV8()
+# #         plotter = BboxesPlotter()
+
+# #         for file in files:
+            
+# #             start = time.time()
+# #             results = yolo.detect(file)
+# #             print(f'time: {time.time() - start} s')
+
+# #             save_name = f'out/{model_name}/' + f'{scene}_' + file.split('/')[-1]
+# #             dir_name = os.path.dirname(save_name)
+# #             if not os.path.exists(dir_name):
+# #                 os.makedirs(dir_name)
+            
+# #             plotter.plot_bboxes(file, results, save_name)
+
+# if __name__ == '__main__':
+#     image_folder = '/home/myd/Desktop/multi'
+#     output_folder = './out/'
+
+#     yolo = YOLOV8()
+#     plotter = BboxesPlotter()
+
+#     image_files = glob.glob(f'{image_folder}/*.png')
+
+#     for file in image_files:
+#         start = time.time()
+#         results = yolo.detect(file)
+
+#         print(f'Processing {file} - time: {time.time() - start} s')
+
+#         save_name = output_folder + file.split('/')[-1]
+#         plotter.plot_bboxes(file, results, save_name)
