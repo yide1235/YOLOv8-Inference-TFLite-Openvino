@@ -1048,7 +1048,7 @@ class BboxesPlotter:
         #######import: tracked_dets should be a list/numpy array, each row contains: 4 coordinate, cls_id, confidence, 0,0, track_id
         # print(results)
 
-        print(id)
+        # print(id)
 
         for i,value in enumerate(results):
             bbox=value[:4]
@@ -1105,8 +1105,8 @@ if __name__ == '__main__':
     unique_ids1=yolo.output_id(file1,results1)
     # print(unique_ids)
 
-    print(results1)
-    print(unique_ids1)
+    # print(results1)
+    # print(unique_ids1)
     
 
     save_name1 = output_folder + file1.split('/')[-1]
@@ -1130,8 +1130,8 @@ if __name__ == '__main__':
     unique_ids2=yolo.output_id(file2,results2)
     
 
-    print(results2)
-    print(unique_ids2)
+    # print(results2)
+    # print(unique_ids2)
 
     save_name2 = output_folder + file2.split('/')[-1]
     # plotter.plot_bboxes(file, results, save_name)
