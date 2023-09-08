@@ -354,9 +354,9 @@ model_name = 'yolov8l_integer_quant'
 class YOLOV8:
     def __init__(self) -> None:
         # self.interpreter = tflite.Interpreter(model_path='./yolov8l_float32.tflite')
-        self.interpreter = tflite.Interpreter(model_path='./yolov8x6_float32.tflite')
+        # self.interpreter = tflite.Interpreter(model_path='./yolov8x6_float32.tflite')
 
-        # self.interpreter = tflite.Interpreter(model_path='./yolov8x6_integer_quant.tflite')
+        self.interpreter = tflite.Interpreter(model_path='./yolov8l_integer_quant.tflite')
         # self.interpreter = tflite.Interpreter(model_path='models/yolov8l_int8.tflite',
         #                 experimental_delegates=[tflite.load_delegate('vx_delegate.so')])
         self.interpreter.allocate_tensors()
@@ -374,7 +374,7 @@ class YOLOV8:
         self.img_width = 0
 
         # parameters
-        self.conf_thres = 0.25
+        self.conf_thres = 0.23
         self.overlapThresh = 0.45
 
     def preprocess(self, image):
@@ -1056,7 +1056,8 @@ class BboxesPlotter:
             # track_id=i[8]
             cls_id=value[5]
             cls_name=coco_names[int(cls_id)]
-            tracking_id=id[i]
+
+            tracking_id=id[i][0]
 
             label = f'{tracking_id} {confidence:.2f}'
             
@@ -1193,11 +1194,14 @@ if __name__ == '__main__':
     # print("Unique IDs for list2:")
     # print(unique_ids2)
 
-    
-    if len(unique_ids1)> len(unique_ids2):
-        ids1=np.arange(0, len(unique_ids1))
 
-        ids2 = []
+
+    if len(unique_ids1)> len(unique_ids2):
+
+        # ids1=np.arange(0, len(unique_ids1))
+        ids1={i:[i,-1] for i in range(len(unique_ids1))}
+
+        ids2 = {}
 
         # Iterate through the vectors in list2
         for i, vec2 in enumerate(unique_ids2):
@@ -1213,12 +1217,15 @@ if __name__ == '__main__':
                         matching_id2 = j
 
             # Assign the same unique ID for the closest vector in list1
-
-            ids2.append(matching_id2)
+            if i in ids2:
+                if ids2[i][1]>min_norm:
+                    ids2[i]=[matching_id2,min_norm]
+            else:
+                ids2[i]=[matching_id2,min_norm]
     else:
-        ids2=np.arange(0, len(unique_ids2))
+        ids2={i:[i,-1] for i in range(len(unique_ids2))}
 
-        ids1 =[]
+        ids1 ={}
 
 
         # Iterate through the vectors in list1
@@ -1237,13 +1244,15 @@ if __name__ == '__main__':
                         matching_id = j
 
             # Assign the same unique ID for the closest vector in list2
-            ids1.append(matching_id)
+            if i in ids1:
+                if ids1[i][1]>min_norm:
+                    ids1[i]=[matching_id,min_norm]
+            else:
+                
+                ids1[i]=[matching_id,min_norm]
         
 
 
-
-
- 
 
     plotter.plot_bboxes(file1, results1, save_name1, ids1)
     plotter.plot_bboxes(file2, results2, save_name2, ids2)
