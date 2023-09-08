@@ -354,9 +354,9 @@ model_name = 'yolov8l_integer_quant'
 class YOLOV8:
     def __init__(self) -> None:
         # self.interpreter = tflite.Interpreter(model_path='./yolov8l_float32.tflite')
-        # self.interpreter = tflite.Interpreter(model_path='./yolov8x6_float32.tflite')
+        self.interpreter = tflite.Interpreter(model_path='./yolov8x6_float32.tflite')
 
-        self.interpreter = tflite.Interpreter(model_path='./yolov8l_integer_quant.tflite')
+        # self.interpreter = tflite.Interpreter(model_path='./yolov8x6_integer_quant.tflite')
         # self.interpreter = tflite.Interpreter(model_path='models/yolov8l_int8.tflite',
         #                 experimental_delegates=[tflite.load_delegate('vx_delegate.so')])
         self.interpreter.allocate_tensors()
@@ -1079,7 +1079,7 @@ class BboxesPlotter:
 
 
 if __name__ == '__main__':
-    image_folder = '/home/myd/Desktop/frid'
+    image_folder = '/home/myd/Desktop/bus'
     output_folder = './out/'
     
 
@@ -1193,7 +1193,7 @@ if __name__ == '__main__':
     # print("Unique IDs for list2:")
     # print(unique_ids2)
 
-
+    
     if len(unique_ids1)> len(unique_ids2):
         ids1=np.arange(0, len(unique_ids1))
 
