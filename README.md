@@ -23,7 +23,7 @@ https://github.com/yide1235/Yolov8-tracking-tflite-CPP.git
 ```
 
 ### Results
-Initial result using yolov8l quantized tflite pretrain model for stereo images(the first index is tracking id, the second is confidence, the color of the box is the class):
+Initial result using yolov8l quantized tflite pretrain model for stereo images(the first index is tracking id, the second is confidence, the color of the box is the class, you can notice this is two frame from a sequence):
 ![](./assets/1.png)
 ![](./assets/2.png)
 
