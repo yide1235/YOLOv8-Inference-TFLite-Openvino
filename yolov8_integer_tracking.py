@@ -414,20 +414,19 @@ class YOLOV8:
         input_data = self.preprocess(image)
 
         interpreter.set_tensor(self.input_details[0]['index'], input_data)
-        # start_time = time.time()
+
         interpreter.invoke()
-        # stop_time = time.time()
+
         output_data = interpreter.get_tensor(self.output_details[0]['index'])
 
-        # print(output_data.shape)
+
         
         results = self.postprocess(output_data)
 
         #wont use tracking
         # tracked_dets = tracker.update(results)
         # tracks =tracker.getTrackers()
-        #wont
-        # print(results)        
+    
         # return tracked_dets
         return results
     
@@ -459,26 +458,13 @@ class YOLOV8:
 
                 score = scores[ind[indices]]
 
-                # for bbox, sscore in zip(box, score):
-                #     result = {
-                #         'bounding_box': bbox,
-                #         'cls_id': i,
-                #         'cls_name': coco_names[i],
-                #         'score': sscore
-                #     }
-                #     results.append(result)
-                # print(results)
-
             
                 for bbox, sscore in zip(box, score):
-                    #if this is only for human
-                    # if i==0:
-                    #     result=np.hstack((bbox, sscore, i))
-                    #     results.append(result)
+
                     if (bbox[2]-bbox[0]!=0) and (bbox[3]-bbox[1]!=0):
                         result=np.hstack((bbox, sscore, i))
                         results.append(result)
-        # print(results)
+
         
         results=np.array(results)
        
@@ -572,11 +558,6 @@ class YOLOV8:
         return boxes
 
 
-    # def calculate_covariance(self,a,b):
-    #     #assume a b are already var/mean
-
-
-
     def output_id(self, image, results):
 
         # load image
@@ -590,135 +571,29 @@ class YOLOV8:
             raise ValueError("Invalid image input. Only file paths or a NumPy array accepted.")
         
 
-        #so results is [boundingbox, confidence, class_id]
-        # print((results))
-        # print("11111111111111")
         len_results=len(results)
         unique_ids=[]
 
-        # print(len_results)
+
     
         for i in range(len_results):
-            #cls_id
-            cls_id=results[i][5]
-            #end of cls_id
 
-            #confidence
+            cls_id=results[i][5]
+
             confidence=results[i][4]
             
             #ratio
             x=results[i][:4]
 
 
-            # ratio1=np.abs(x[0]-x[2])
-            # ratio2=np.abs(x[1]-x[3])
-            # if ratio1>ratio2:
-            #     ratio=ratio2/ratio1
-            # elif ratio1<ratio2:
-            #     ratio=ratio1/ratio2
-            # else:
-            #     ratio=1
-            # # ratio=min_ratio/max_ratio
-            # #end of ratio
-
-            #covirance:RGB
             x1, y1, x2, y2=map(int, x)
 
             
 
             detected=image[y1:y2, x1:x2]
-            # print(detected.shape)
-            # cv.imshow('Image', detected)
-
-            # cv.waitKey(0)
-            # cv.destroyAllWindows()
-
-            # # print('4444444444444444444444444')
             
             width=np.abs(y1-y2)
             height=np.abs(x1-x2)
-
-
-
-            # cv.imshow('this',detected)
-            # cv.waitKey(0)
-            # cv.destroyAllWindows()
-            # print(detected.shape)
-
-
-
-
-
-            #average color:
-            # average_color = np.mean(detected, axis=(0, 1)) 
-            # unique_id=np.hstack((confidence, average_color))
-            # print(average_color)
-
-
-            # unique_ids.append(average_color)
-
-
-
-
-
-            #     #this is four
-            #     #now divide detected into 4
-
-            
-            # if detected.shape[0] and detected.shape[1]:
-
-            #     #this is four
-            #     #now divide detected into 4
-            #     split=2
-            #     detected1=detected[0: int(width/split), 0: int(height/split)] #left top
-            #     detected2=detected[0: int(width/split), int(height/split):height] #right top
-            #     detected3=detected[int(width/split): width, 0: int(height/split)] #left down
-            #     detected4=detected[int(width/split): width, int(height/split):height] #right down
-
-            #     # cv.imshow('this',detected)
-            #     # cv.waitKey(0)
-            #     # cv.imshow('this',detected1)
-            #     # cv.waitKey(0)
-            #     # cv.imshow('this',detected2)
-            #     # cv.waitKey(0)
-            #     # cv.imshow('this',detected3)
-            #     # cv.waitKey(0)
-            #     # cv.imshow('this',detected4)
-            #     # cv.waitKey(0)
-            #     # cv.destroyAllWindows()
-
-            #     # sigma1=np.var(detected1) #left top
-            #     # sigma2=np.var(detected2) #right top
-            #     # sigma3=np.var(detected3) #left down
-            #     # sigma4=np.var(detected4) #right down
-
-            
-
-            #     b1, g1, r1= cv.split(detected1)
-
-            #     # sigma1=np.array([np.var(b1), np.var(g1), np.var(r1)])
-            #     b2, g2, r2= cv.split(detected2)
-            #     # sigma2=np.array([np.var(b2), np.var(g2), np.var(r2)])
-            #     b3, g3, r3= cv.split(detected3)
-            #     # sigma3=np.array([np.var(b3), np.var(g3), np.var(r3)])
-            #     b4, g4, r4= cv.split(detected4)
-            #     # sigma4=np.array([np.var(b4), np.var(g4), np.var(r4)])
-
-            #     #sigma* is 1x3
-
-            #     #first method
-            #     #b covriance matrix is:
-            #     # print(round(height/2))
-            #     # print(round(width/2))
-
-            #     # print
-
-            #     b=np.array([np.var(b1)*np.var(b2), np.var(b1)*np.var(b3), np.var(b1)*np.var(b4), np.var(b2)*np.var(b3), np.var(b2)*np.var(b4), np.var(b3)*np.var(b4)])
-            #     g=np.array([np.var(g1)*np.var(g2), np.var(g1)*np.var(g3), np.var(g1)*np.var(g4), np.var(g2)*np.var(g3), np.var(g2)*np.var(g4), np.var(g3)*np.var(g4)])
-            #     r=np.array([np.var(r1)*np.var(r2), np.var(r1)*np.var(r3), np.var(r1)*np.var(r4), np.var(r2)*np.var(r3), np.var(r2)*np.var(r4), np.var(r3)*np.var(r4)])
-                
-            #     # print(b)
-
 
 
 
@@ -800,12 +675,11 @@ class YOLOV8:
 
             #now using 16
 
-            # print(detected.shape[0], detected.shape[1],'222222222222222')
 
             if detected.shape[0] and detected.shape[1]:
 
-                #this is four
-                #now divide detected into 4
+
+
                 split = 4  # Number of splits in each dimension (e.g., 3x3 grid)
 
                 block_width = width // split
@@ -913,16 +787,6 @@ class YOLOV8:
                 ])
 
 
-
-
-
-
-            #end of picking 2,3,4 split
-
-
-
-
-
                 b=b/(width*height)
                 b=b.astype(int)
                 b=np.sort(b)
@@ -976,19 +840,16 @@ class YOLOV8:
 
 
                 #bucketize
-                # print(b)
 
                 b_max=np.max(b)
-                # print(b_max)
+
                 b_min=np.min(b)
-                # print(b_min)
+ 
                 binterval=(b_max-b_min)/(len(b)-1)
-                # print(binterval)
+
 
                 for i in range(len(b)):
-                    # print(((b[i]-b_min)/interval))
-                    # print((b[i]-b_min)/binterval+1)
-                    # print(b[i])
+
                     b[i]=(b[i]-b_min)/binterval+1
 
 
@@ -1012,24 +873,19 @@ class YOLOV8:
                 unique_id=np.hstack((confidence, unique_id))
 
 
-
-            #     # unique_id=np.hstack((b,g,r))
                 unique_id=np.hstack((int(cls_id), b, g, r))
                 unique_ids.append(unique_id)
 
-                # print(len(unique_ids))
+ 
 
 
 
         return unique_ids
 
 
-        #here has bugs
-        
 
 
-
-
+    # ssim not working because the definition of covariance is positional encoding 
     # def ssim(self, image1, results1,bit_depth1, image2, results2, bit_depth2):
 
     #     detected1=[]
@@ -1187,8 +1043,6 @@ class YOLOV8:
 
 
 
-
-
 class BboxesPlotter:
     def __init__(self) -> None:
         self.colors = self.Colors()
@@ -1228,41 +1082,6 @@ class BboxesPlotter:
         
         im0 = cv.imread(img_path)
 
-        #so the track_result(results) is a numpy array, each row is:
-        #[a,b,c,d, confidence, cls_id, id]
-
-        # print(results)
-
-        # #old code
-        # for i in results:
-        #     bbox=i[:4]
-        #     confidence=i[4]
-        #     cls_id=i[5]
-        #     cls_name=coco_names[int(cls_id)]
-        #     tracking_id=i[6]
-
-
-        # # for obj in results:
-        # #     bbox = obj['bounding_box']
-        # #     cls_id = obj['cls_id']
-        # #     cls_name = obj['cls_name']
-        # #     score = obj['score']
-
-        #     label = f'{tracking_id}{" "+cls_name} {confidence:.2f}'
-        #     color = self.colors(cls_id, True)
-
-        #     im0 = self.plot_one_box(bbox, im0, color, label)
-
-        # cv.imwrite(save_path, im0)
-        # #end of old code
-
-
-        #new
-        #results now is tracked_dets
-        #######import: tracked_dets should be a list/numpy array, each row contains: 4 coordinate, cls_id, confidence, 0,0, track_id
-        # print(results)
-
-        # print(id)
 
         for i,value in enumerate(results):
             bbox=value[:4]
@@ -1279,14 +1098,14 @@ class BboxesPlotter:
             color = self.colors(cls_id, True)
 
             im0 = self.plot_one_box(bbox, im0, color, label)
-        # cv.imshow('111',im0)
-        # cv.waitKey(0)
-        # cv.imwrite(save_path, im0)
+
+        try:
+            cv.imwrite(save_path, im0)
+        except Exception as e:
+            print("Error:", e)
 
 
 #end of yolov8
-
-
 
 
 
@@ -1295,7 +1114,7 @@ class BboxesPlotter:
 
 
 if __name__ == '__main__':
-    image_folder = '/home/myd/Desktop/bus'
+    image_folder = './test'
     output_folder = './out/'
     
 
@@ -1304,11 +1123,11 @@ if __name__ == '__main__':
     yolo = YOLOV8()
     plotter = BboxesPlotter()
 
-    image_files = glob.glob(f'{image_folder}/*.jpg')
+    image_files = glob.glob(f'{image_folder}/*.[jp][pn][ge]')
     sorted_image_files = sorted(image_files)
 
     
-    
+   
     file1=sorted_image_files[0]
     #should iterative twice
 
@@ -1319,19 +1138,11 @@ if __name__ == '__main__':
     results1 = yolo.detect(file1)
 
     unique_ids1=yolo.output_id(file1,results1)
-    # print(unique_ids)
-
-    # print(results1)
-    # print(unique_ids1)
-    
 
     save_name1 = output_folder + file1.split('/')[-1]
     # plotter.plot_bboxes(file, results, save_name)
 
     print(f'Processing {file1} - time: {time.time() - start1} s')
-
-
-
 
 
     file2=sorted_image_files[1]
@@ -1346,22 +1157,17 @@ if __name__ == '__main__':
     unique_ids2=yolo.output_id(file2,results2)
     
 
-    # print(results2)
-    # print(unique_ids2)
-
     save_name2 = output_folder + file2.split('/')[-1]
     # plotter.plot_bboxes(file, results, save_name)
 
     print(f'Processing {file2} - time: {time.time() - start2} s')
 
-    # id1=np.array((len(unique_ids1)))
 
     start3 = time.time()
 
     cut_threshold=200
 
     if len(unique_ids1)> len(unique_ids2):
-
 
 
         # ids1=np.arange(0, len(unique_ids1))
@@ -1371,7 +1177,7 @@ if __name__ == '__main__':
 
         addition=1
 
-        print(len(unique_ids2))
+
 
         # Iterate through the vectors in list2
         for i, vec2 in enumerate(unique_ids2):
@@ -1389,22 +1195,13 @@ if __name__ == '__main__':
                     nin_norm=-1
                     matching_id2-1
 
-            print(i)
             if cut_threshold> min_norm:
                 ids2[i]=[matching_id2,min_norm]
             else:
                 ids2[i]=[-1,-1]
-            # print(ids2)
-            # Assign the same unique ID for the closest vector in list1
 
-            
-
-
-        # keys_to_modify = list(ids2.keys())   
-            # Iterate through the copied keys
         for key1,value1 in ids2.items():
-            # for key in ids2:
-                # print(matching_id2, ids2[key][0],'fffffffffffff')
+
             for key2,value2 in ids2.items():
                 if key1!=key2 and value1[0]==value2[0] and value1[0]!=-1:
                         # print(ids2[key1][0],ids2[key2][0])
@@ -1415,7 +1212,7 @@ if __name__ == '__main__':
                             value1[0]=len(unique_ids1)+addition
                             addition+=1
 
-        print(ids2)
+        # print(ids2)
 
 
 
@@ -1450,11 +1247,8 @@ if __name__ == '__main__':
             else:
                 ids1[i]=[-1,-1]
 
-        # keys_to_modify = list(ids2.keys())   
-            # Iterate through the copied keys
         for key1,value1 in ids1.items():
-            # for key in ids1:
-                # print(matching_id2, ids1[key][0],'fffffffffffff')
+
             for key2,value2 in ids1.items():
                 if key1!=key2 and value1[0]==value2[0]:
                         # print(ids1[key1][0],ids1[key2][0])
@@ -1465,13 +1259,11 @@ if __name__ == '__main__':
                             value1[0]=len(unique_ids1)+addition
                             addition+=1
         
-    print(results1)
-    print(results2)
+    # print(results1)
+    # print(results2)
 
-    print(ids1)
-    print(ids2)
-
-
+    # print(ids1)
+    # print(ids2)
 
 
     plotter.plot_bboxes(file1, results1, save_name1, ids1)
@@ -1540,10 +1332,6 @@ if __name__ == '__main__':
 
 
 
-
-
-
-    
  
 
 # ###########################################just image inference
@@ -1584,22 +1372,6 @@ if __name__ == '__main__':
 #         print(f'Processing {file} - time: {time.time() - start} s')
 
 #         save_name = output_folder + file.split('/')[-1]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
