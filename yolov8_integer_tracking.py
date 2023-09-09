@@ -374,7 +374,7 @@ class YOLOV8:
         self.img_width = 0
 
         # parameters
-        self.conf_thres = 0.23
+        self.conf_thres = 0.25
         self.overlapThresh = 0.45
 
     def preprocess(self, image):
@@ -418,6 +418,8 @@ class YOLOV8:
         interpreter.invoke()
         # stop_time = time.time()
         output_data = interpreter.get_tensor(self.output_details[0]['index'])
+
+        # print(output_data.shape)
         
         results = self.postprocess(output_data)
 
@@ -469,11 +471,13 @@ class YOLOV8:
 
             
                 for bbox, sscore in zip(box, score):
+                    #if this is only for human
                     # if i==0:
                     #     result=np.hstack((bbox, sscore, i))
                     #     results.append(result)
-                    result=np.hstack((bbox, sscore, i))
-                    results.append(result)
+                    if (bbox[2]-bbox[0]!=0) and (bbox[3]-bbox[1]!=0):
+                        result=np.hstack((bbox, sscore, i))
+                        results.append(result)
         # print(results)
         
         results=np.array(results)
@@ -591,6 +595,8 @@ class YOLOV8:
         # print("11111111111111")
         len_results=len(results)
         unique_ids=[]
+
+        # print(len_results)
     
         for i in range(len_results):
             #cls_id
@@ -602,24 +608,37 @@ class YOLOV8:
             
             #ratio
             x=results[i][:4]
-            ratio1=np.abs(x[0]-x[2])
-            ratio2=np.abs(x[1]-x[3])
-            if ratio1>ratio2:
-                ratio=ratio2/ratio1
-            elif ratio1<ratio2:
-                ratio=ratio1/ratio2
-            else:
-                ratio=1
-            # ratio=min_ratio/max_ratio
-            #end of ratio
+
+
+            # ratio1=np.abs(x[0]-x[2])
+            # ratio2=np.abs(x[1]-x[3])
+            # if ratio1>ratio2:
+            #     ratio=ratio2/ratio1
+            # elif ratio1<ratio2:
+            #     ratio=ratio1/ratio2
+            # else:
+            #     ratio=1
+            # # ratio=min_ratio/max_ratio
+            # #end of ratio
 
             #covirance:RGB
             x1, y1, x2, y2=map(int, x)
 
+            
+
             detected=image[y1:y2, x1:x2]
+            # print(detected.shape)
+            # cv.imshow('Image', detected)
+
+            # cv.waitKey(0)
+            # cv.destroyAllWindows()
+
+            # # print('4444444444444444444444444')
             
             width=np.abs(y1-y2)
             height=np.abs(x1-x2)
+
+
 
             # cv.imshow('this',detected)
             # cv.waitKey(0)
@@ -637,19 +656,6 @@ class YOLOV8:
 
 
             # unique_ids.append(average_color)
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -793,7 +799,10 @@ class YOLOV8:
                 
 
             #now using 16
-                        if detected.shape[0] and detected.shape[1]:
+
+            # print(detected.shape[0], detected.shape[1],'222222222222222')
+
+            if detected.shape[0] and detected.shape[1]:
 
                 #this is four
                 #now divide detected into 4
@@ -916,16 +925,17 @@ class YOLOV8:
 
                 b=b/(width*height)
                 b=b.astype(int)
+                b=np.sort(b)
+
                 g=g/(width*height)
                 g=g.astype(int)
+                g=np.sort(g)                
+                
                 r=r/(width*height)
                 r=r.astype(int)
-        
-            #     # print(b)
+                r=np.sort(r)
 
-            #     # b=b*10000
-            #     # g=g*10000
-            #     # r=r*10000
+
 
 
             #     #rank
@@ -1007,91 +1017,176 @@ class YOLOV8:
                 unique_id=np.hstack((int(cls_id), b, g, r))
                 unique_ids.append(unique_id)
 
+                # print(len(unique_ids))
 
 
-
-
-
-
-
-                #second method
-                # b=[b1,b2,b3,b4]
-                # g=[g1,g2,g3,g4]
-                # r=[r1,r2,r3,r4]
-
-                # # print(b)
-                # # print(g)
-                # # print(r)
-
-
-                # m=round(width/2)+1
-                
-                # n=round(height/2)+1
-
-                # b_after=[]
-                # g_after=[]
-                # r_after=[]
-
-                # for i in b:
-
-                #     a=i.shape[0]
-                #     b=i.shape[1]
-
-                #     pad_rows=max(0, m-a)
-                #     pad_cols=max(0,n-b)
-
-                #     i = np.pad(i, ((0, pad_rows), (0, pad_cols)), mode='constant', constant_values=1)
-                #     b_after.append(i)
-
-                # for i2 in g:
-
-                #     a2=i2.shape[0]
-                #     b2=i2.shape[1]
-
-                #     pad_rows2=max(0, m-a2)
-                #     pad_cols2=max(0,n-b2)
-
-                #     i2 = np.pad(i2, ((0, pad_rows2), (0, pad_cols2)), mode='constant', constant_values=1)
-                #     g_after.append(i2)
-
-                # for i3 in r:
-
-                #     a3=i3.shape[0]
-                #     b3=i3.shape[1]
-
-                #     pad_rows3=max(0, m-a3)
-                #     pad_cols3=max(0,n-b3)
-
-                #     i3 = np.pad(i3, ((0, pad_rows3), (0, pad_cols3)), mode='constant', constant_values=1)
-                #     r_after.append(i3)
-
-                # b_vector=np.array([b_after[0]*b_after[1], b_after[0]*b_after[2], b_after[0]*b_after[3], b_after[1]*b_after[2], b_after[1]*b_after[3], b_after[2]*b_after[3]])
-                # g_vector=np.array([g_after[0]*g_after[1], g_after[0]*g_after[2], g_after[0]*g_after[3], g_after[1]*g_after[2], g_after[1]*g_after[3], g_after[2]*g_after[3]])
-                # r_vector=np.array([r_after[0]*r_after[1], r_after[0]*r_after[2], r_after[0]*r_after[3], r_after[1]*r_after[2], r_after[1]*r_after[3], r_after[2]*r_after[3]])
-
-                # # print(b_vector[0])
-
-                # b_var=[]
-                # for b in b_vector:
-                #     b_var.append(np.var(b)/(width*height*2))
-
-                # g_var=[]
-                # for g in g_vector:
-                #     g_var.append(np.var(g)/(width*height*2))
-
-                # r_var=[]
-                # for r in r_vector:
-                #     r_var.append(np.var(r)/(width*height*2))
-                
-                
-                # print(b_var)
-                # print(g_var)
-                # print(r_var)
-                # unique_id=np.hstack((int(cls_id),confidence, b_var, g_var, r_var))
-                # # unique_id=[b_var, g_var, r_var]
-                # unique_ids.append(unique_id)
 
         return unique_ids
+
+
+        #here has bugs
+        
+
+
+
+
+    # def ssim(self, image1, results1,bit_depth1, image2, results2, bit_depth2):
+
+    #     detected1=[]
+    #     detected2=[]
+
+    #     for i in range(len(results1)):
+    #         x=results1[i][:4]
+    #         x1,y1,x2,y2=map(int, x)
+    #         detected1.append(image1[y1:y2, x1:x2])
+    #         # mean, stddev = cv.meanStdDev(image1[y1:y2, x1:x2])
+    #         # print(mean, stddev)
+    #         # cv.imshow('111',image1[y1:y2, x1:x2])
+    #         # cv.waitKey(0)
+
+    #     print('second')
+
+    #     for i in range(len(results2)):
+    #         y=results2[i][:4]
+    #         x_1,y_1,x_2,y_2=map(int, y)
+    #         detected2.append(image2[y_1:y_2, x_1:x_2])
+    #         # mean, stddev = cv.meanStdDev(image2[y1:y2, x1:x2])
+    #         # print(mean, stddev)
+    #         # cv.imshow('111',image2[y_1:y_2, x_1:x_2])
+    #         # cv.waitKey(0)
+
+
+
+    #     if len(detected1)>len(detected2):
+            
+    #         print('111111111111')
+
+    #         ids1={i:[i,-1] for i in range(len(detected1))}
+
+    #         ids2={}
+
+    #         for i, detection_i in enumerate(detected2):
+    #             max_ssim=0
+    #             ssim=0
+    #             matching_id2=-1
+    #             for j, detection_j in enumerate(detected1):
+    #                 if results1[j][5]==results2[i][5]:
+    #                     ssim=self.ssim_helper1(detection_i, bit_depth2, detection_j, bit_depth1)
+    #                     if ssim > max_ssim:
+                            
+    #                         max_ssim=ssim
+    #                         matching_id2=j
+    #                         # print(j)
+    #                         # print('aaa',matching_id2, max_ssim)
+                
+    #             # print('11111')
+
+    #             if i in ids2:
+    #                 if ids2[i][1]<max_ssim:
+    #                     ids2[i]=[matching_id2, max_ssim]
+    #             else:
+    #                 ids2[i]=[matching_id2,max_ssim]
+
+
+
+    #     else:
+
+
+    #         ids2={i:[i,-1] for i in range(len(detected2))}
+
+    #         ids1={}
+
+    #         for i, detection_i in enumerate(detected1):
+    #             max_ssim=0
+    #             matching_id=-1
+
+    #             for j, detection_j in enumerate(detected2):
+
+    #                 if results1[i][5]==results2[j][5]:
+
+    #                     ssim=self.ssim_helper1(detection_i, bit_depth1, detection_j, bit_depth2)
+
+    #                     if ssim > max_ssim:
+    #                         max_ssim=ssim
+
+    #                         matching_id=j
+
+
+    #             if i in ids1:
+
+    #                 if ids1[i][1]<max_ssim:
+
+    #                     ids1[i]=[matching_id, max_ssim]
+    #             else:
+    #                 ids1[i]=[matching_id,max_ssim]
+
+    #     return ids1, ids2
+
+
+        
+    # def ssim_helper1(self, detected1, bit_depth1, detected2, bit_depth2):
+    #     b1, g1, r1 = cv.split(detected1)
+    #     b2, g2, r2 = cv.split(detected2)
+
+    #     b=self.ssim_helper2(b1, bit_depth1, b2, bit_depth2)
+    #     g=self.ssim_helper2(g1, bit_depth1, g2, bit_depth2)
+    #     r=self.ssim_helper2(r1, bit_depth1, r2, bit_depth2)
+
+    #     return np.linalg.norm(np.array([b,g,r]))
+        
+        
+
+    # def ssim_helper2(self, x,bit_depth1, y, bit_depth2):
+
+
+    #     stddev_x=np.std(x)
+    #     stddev_y=np.std(y)
+
+    #     mean_x = np.mean(x, axis=(0, 1))
+    #     mean_y = np.mean(y, axis=(0, 1))
+
+    #     # print(stddev_x, stddev_y)
+    #     # print(mean_x, mean_y)
+
+    #     variance_x = np.var(x, axis=(0, 1))
+    #     variance_y = np.var(y, axis=(0, 1))
+
+    #     # covariance_matrix = np.cov(np.vstack((x.reshape(-1, 3).T, y.reshape(-1, 3).T)))
+
+    #     # covariance_xy = covariance_matrix[:3, 3:]
+    #     covariance_xy=(variance_x * variance_y) - (mean_x * mean_y)
+
+
+    #     # print("Pixel Sample Mean of x:", mean_x)
+    #     # print("Pixel Sample Mean of y:", mean_y)
+    #     # print("Variance of x:", variance_x)
+    #     # print("Variance of y:", variance_y)
+    #     # print("Covariance between x and y:")
+    #     # print(covariance_xy)
+
+    #     L1=2*bit_depth1 -1
+    #     L2=2*bit_depth2-1
+
+    #     k1=0.01
+    #     k2=0.03
+
+    #     c1=(k1*L1)*(k1*L1)
+    #     c2=(k2*L2)*(k2*L2)
+
+    #     c3=c2/2
+
+    #     l_xy=(2*mean_x*mean_y+c1)/(np.square(mean_x)+np.square(mean_y)+c1)
+
+    #     c_xy=(2*variance_x*variance_y+c1)/(np.square(mean_x)+np.square(mean_y)+c2)
+
+    #     s_xy=(covariance_xy+c3)/(stddev_x*stddev_y+c3)
+
+
+    #     return l_xy*c_xy*s_xy
+
+
+
+
 
 
 class BboxesPlotter:
@@ -1178,16 +1273,15 @@ class BboxesPlotter:
 
             tracking_id=id[i][0]
 
-            label = f'{tracking_id} {confidence:.2f}'
-            
-            # label =f'{confidence:.2f}'
-            # label =f'{track_id:.2f}'
+            # label = f'{tracking_id} {confidence:.2f}'
+            # label = f'{tracking_id} {confidence:.2f}'
+            label =f'{tracking_id}'
             color = self.colors(cls_id, True)
 
             im0 = self.plot_one_box(bbox, im0, color, label)
         # cv.imshow('111',im0)
-        cv.waitKey(0)
-        cv.imwrite(save_path, im0)
+        # cv.waitKey(0)
+        # cv.imwrite(save_path, im0)
 
 
 #end of yolov8
@@ -1195,7 +1289,9 @@ class BboxesPlotter:
 
 
 
-#single image tracking
+
+
+#single image tracking usiong covariance
 
 
 if __name__ == '__main__':
@@ -1262,65 +1358,20 @@ if __name__ == '__main__':
 
     start3 = time.time()
 
-    # Initialize a dictionary to store unique IDs
-    # ids1 =[]
-
-
-    # # Iterate through the vectors in list1
-    # for i, vec1 in enumerate(unique_ids1):
-    #     min_norm = float('inf')
-    #     matching_id = -1
-
-    #     # Compare with vectors in list2
-    #     # print(vec1.shape)
-    #     for j, vec2 in enumerate(unique_ids2):
-
-    #         if vec1[0]==vec2[0]:
-    #             norm = np.linalg.norm(vec1[1:]- vec2[1:])
-    #             if norm < min_norm:
-    #                 min_norm = norm
-    #                 matching_id = j
-
-    #     # Assign the same unique ID for the closest vector in list2
-    #     ids1.append(matching_id)
-    #     # print(matching_id)
-
-    # # Print the unique IDs for list1
-    # # print("Unique IDs for list1:")
-    # # print(unique_ids1)
-
-    # # Reset the unique IDs for list2
-    # ids2 = []
-
-    # # Iterate through the vectors in list2
-    # for i, vec2 in enumerate(unique_ids2):
-    #     min_norm = float('inf')
-    #     matching_id2 = -1
-
-    #     # Compare with vectors in list1
-    #     for j, vec1 in enumerate(unique_ids1):
-    #         if vec1[0]==vec2[0]:
-    #             norm = np.linalg.norm(vec1[1:]- vec2[1:])
-    #             if norm < min_norm:
-    #                 min_norm = norm
-    #                 matching_id2 = j
-
-    #     # Assign the same unique ID for the closest vector in list1
-
-    #     ids2.append(matching_id2)
-
-    # Print the unique IDs for list2
-    # print("Unique IDs for list2:")
-    # print(unique_ids2)
-
-
+    cut_threshold=200
 
     if len(unique_ids1)> len(unique_ids2):
+
+
 
         # ids1=np.arange(0, len(unique_ids1))
         ids1={i:[i,-1] for i in range(len(unique_ids1))}
 
         ids2 = {}
+
+        addition=1
+
+        print(len(unique_ids2))
 
         # Iterate through the vectors in list2
         for i, vec2 in enumerate(unique_ids2):
@@ -1334,14 +1385,39 @@ if __name__ == '__main__':
                     if norm < min_norm:
                         min_norm = norm
                         matching_id2 = j
+                else:
+                    nin_norm=-1
+                    matching_id2-1
 
-            # Assign the same unique ID for the closest vector in list1
-            if i in ids2:
-                if ids2[i][1]>min_norm:
-                    ids2[i]=[matching_id2,min_norm]
-                
-            else:
+            print(i)
+            if cut_threshold> min_norm:
                 ids2[i]=[matching_id2,min_norm]
+            else:
+                ids2[i]=[-1,-1]
+            # print(ids2)
+            # Assign the same unique ID for the closest vector in list1
+
+            
+
+
+        # keys_to_modify = list(ids2.keys())   
+            # Iterate through the copied keys
+        for key1,value1 in ids2.items():
+            # for key in ids2:
+                # print(matching_id2, ids2[key][0],'fffffffffffff')
+            for key2,value2 in ids2.items():
+                if key1!=key2 and value1[0]==value2[0] and value1[0]!=-1:
+                        # print(ids2[key1][0],ids2[key2][0])
+                        if value1[1]>value2[1]:
+                            value2[0]=len(unique_ids1)+addition
+                            addition+=1
+                        else:
+                            value1[0]=len(unique_ids1)+addition
+                            addition+=1
+
+        print(ids2)
+
+
 
             
     else:
@@ -1349,10 +1425,13 @@ if __name__ == '__main__':
 
         ids1 ={}
 
+        addition=1
+
+
 
         # Iterate through the vectors in list1
         for i, vec1 in enumerate(unique_ids1):
-            min_norm = float('inf')
+            min_norm1 = float('inf')
             matching_id = -1
 
             # Compare with vectors in list2
@@ -1360,21 +1439,38 @@ if __name__ == '__main__':
             for j, vec2 in enumerate(unique_ids2):
 
                 if vec1[0]==vec2[0]:
-                    norm = np.linalg.norm(vec1[1:]- vec2[1:])
-                    if norm < min_norm:
-                        min_norm = norm
+                    norm = np.linalg.norm(vec2[1:]- vec1[1:])
+                    if norm < min_norm1:
+                        min_norm1 = norm
                         matching_id = j
 
-            # Assign the same unique ID for the closest vector in list2
-            if i in ids1:
-                if ids1[i][1]>min_norm:
-                    ids1[i]=[matching_id,min_norm]
+
+            if cut_threshold> min_norm1:
+                ids1[i]=[matching_id,min_norm1]
             else:
-                
-                ids1[i]=[matching_id,min_norm]
+                ids1[i]=[-1,-1]
+
+        # keys_to_modify = list(ids2.keys())   
+            # Iterate through the copied keys
+        for key1,value1 in ids1.items():
+            # for key in ids1:
+                # print(matching_id2, ids1[key][0],'fffffffffffff')
+            for key2,value2 in ids1.items():
+                if key1!=key2 and value1[0]==value2[0]:
+                        # print(ids1[key1][0],ids1[key2][0])
+                        if value1[1]>value2[1]:
+                            value2[0]=len(unique_ids1)+addition
+                            addition+=1
+                        else:
+                            value1[0]=len(unique_ids1)+addition
+                            addition+=1
         
+    print(results1)
+    print(results2)
+
     print(ids1)
     print(ids2)
+
 
 
 
@@ -1385,7 +1481,11 @@ if __name__ == '__main__':
     print(f'Processing {file1, file2} - time: {time.time() - start3} s')
 
 
-#video no tracking
+
+
+
+
+#########################################33video no tracking
 # if __name__ == '__main__':
 
 
@@ -1437,10 +1537,16 @@ if __name__ == '__main__':
 #     print("Processing completed. Annotated video saved at:", output_path)
     
     
+
+
+
+
+
+
     
  
 
-# #just image inference
+# ###########################################just image inference
 
 # # if __name__ == '__main__':
 # #     for scene in ['bus', 'school', 'hospital', 'dwight']:
@@ -1478,4 +1584,181 @@ if __name__ == '__main__':
 #         print(f'Processing {file} - time: {time.time() - start} s')
 
 #         save_name = output_folder + file.split('/')[-1]
-#         plotter.plot_bboxes(file, results, save_name)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+###################ssim one, not working right now
+
+# if __name__ == '__main__':
+#     image_folder = '/home/myd/Desktop/baseball'
+#     output_folder = './out/'
+    
+
+#     # init_tracker()
+
+#     yolo = YOLOV8()
+#     plotter = BboxesPlotter()
+
+#     image_files = glob.glob(f'{image_folder}/*.jpg')
+#     sorted_image_files = sorted(image_files)
+
+    
+    
+#     file1=sorted_image_files[0]
+#     #should iterative twice
+
+#     start1 = time.time()
+    
+    
+
+#     results1 = yolo.detect(file1)
+
+    
+
+#     save_name1 = output_folder + file1.split('/')[-1]
+#     # plotter.plot_bboxes(file, results, save_name)
+
+#     print(f'Processing {file1} - time: {time.time() - start1} s')
+
+
+
+
+
+#     file2=sorted_image_files[1]
+#     #should iterative twice
+
+#     start2 = time.time()
+    
+    
+
+#     results2 = yolo.detect(file2)
+
+
+    
+
+#     # print(results2)
+#     # print(unique_ids2)
+
+#     save_name2 = output_folder + file2.split('/')[-1]
+#     # plotter.plot_bboxes(file, results, save_name)
+
+#     print(f'Processing {file2} - time: {time.time() - start2} s')
+
+    
+#     #now i have image1, iamge2, resutls1, results2
+    
+
+
+
+
+#     # start3 = time.time()
+
+
+#     # if len(unique_ids1)> len(unique_ids2):
+
+#     #     # ids1=np.arange(0, len(unique_ids1))
+#     #     ids1={i:[i,-1] for i in range(len(unique_ids1))}
+
+#     #     ids2 = {}
+
+#     #     # Iterate through the vectors in list2
+#     #     for i, vec2 in enumerate(unique_ids2):
+#     #         min_norm = float('inf')
+#     #         matching_id2 = -1
+
+#     #         # Compare with vectors in list1
+#     #         for j, vec1 in enumerate(unique_ids1):
+#     #             if vec1[0]==vec2[0]:
+#     #                 norm = np.linalg.norm(vec1[1:]- vec2[1:])
+#     #                 if norm < min_norm:
+#     #                     min_norm = norm
+#     #                     matching_id2 = j
+
+#     #         # Assign the same unique ID for the closest vector in list1
+#     #         if i in ids2:
+#     #             if ids2[i][1]>min_norm:
+#     #                 ids2[i]=[matching_id2,min_norm]
+                
+#     #         else:
+#     #             ids2[i]=[matching_id2,min_norm]
+
+            
+#     # else:
+#     #     ids2={i:[i,-1] for i in range(len(unique_ids2))}
+
+#     #     ids1 ={}
+
+
+#     #     # Iterate through the vectors in list1
+#     #     for i, vec1 in enumerate(unique_ids1):
+#     #         min_norm = float('inf')
+#     #         matching_id = -1
+
+#     #         # Compare with vectors in list2
+#     #         # print(vec1.shape)
+#     #         for j, vec2 in enumerate(unique_ids2):
+
+#     #             if vec1[0]==vec2[0]:
+#     #                 norm = np.linalg.norm(vec1[1:]- vec2[1:])
+#     #                 if norm < min_norm:
+#     #                     min_norm = norm
+#     #                     matching_id = j
+
+#     #         # Assign the same unique ID for the closest vector in list2
+#     #         if i in ids1:
+#     #             if ids1[i][1]>min_norm:
+#     #                 ids1[i]=[matching_id,min_norm]
+#     #         else:
+                
+#     #             ids1[i]=[matching_id,min_norm]
+        
+#     # # print(ids1)
+#     # # print(ids2)
+
+
+
+
+
+#     im1=cv.imread(file1)
+#     im2=cv.imread(file2)
+#     # print(im1.shape)
+#     # print(im2.shape)
+#     # print(results1)
+#     # print(results2)
+
+#     bit_depth1=im1.dtype.itemsize * 8
+#     bit_depth2=im2.dtype.itemsize * 8
+
+#     assert bit_depth1 == bit_depth2, "Error: Bit depths of the two images are not equal."
+
+#     # print(f'Processing {file1, file2} - time: {time.time() - start3} s')
+#     ids1, ids2= yolo.ssim(im1, results1,bit_depth1, im2, results2, bit_depth2)
+
+#     print(ids1)
+
+#     print(ids2)
+
+
+#     plotter.plot_bboxes(file1, results1, save_name1, ids1)
+#     plotter.plot_bboxes(file2, results2, save_name2, ids2)
