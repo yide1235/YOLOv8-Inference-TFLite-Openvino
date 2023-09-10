@@ -595,9 +595,6 @@ class YOLOV8:
             width=np.abs(y1-y2)
             height=np.abs(x1-x2)
 
-
-
-
                 
 
             #now using 16
@@ -607,7 +604,7 @@ class YOLOV8:
 
 
 
-                split = 4  
+                split = 4  # Number of splits in each dimension (e.g., 3x3 grid)
 
                 block_width = width // split
                 block_height = height // split
@@ -619,14 +616,11 @@ class YOLOV8:
                         block = detected[i * block_width: (i + 1) * block_width, j * block_height: (j + 1) * block_height]
                         blocks.append(block)
 
-
-
                 b=[]
                 g=[]
                 r=[]
 
                 for i in range(split*split):
-                    
                     m1,m2,m3= cv.split(blocks[i])
                     b.append(m1)
                     g.append(m2)
@@ -641,7 +635,7 @@ class YOLOV8:
                     for j in range(i+1, split*split):
                         b_var.append(np.var(b[i])*np.var(b[j]))
                         g_var.append(np.var(g[i])*np.var(g[j]))
-                        r_var.append(np.var(r[i]*np.var(r[j])))
+                        r_var.append(np.var(r[i])*np.var(r[j]))
                         
 
 
@@ -656,8 +650,6 @@ class YOLOV8:
                 r=r_var/(width*height)
                 r=r.astype(int)
                 r=np.sort(r)
-
-
 
 
 
@@ -1024,7 +1016,7 @@ if __name__ == '__main__':
 
     start3 = time.time()
 
-    cut_threshold=200
+    cut_threshold=250
 
     if len(unique_ids1)> len(unique_ids2):
 
