@@ -1136,8 +1136,8 @@ if __name__ == '__main__':
     # print(results1)
     # print(results2)
 
-    print(ids1)
-    print(ids2)
+    # print(ids1)
+    # print(ids2)
 
 
     plotter.plot_bboxes(file1, results1, save_name1, ids1)
