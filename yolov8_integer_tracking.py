@@ -607,7 +607,7 @@ class YOLOV8:
 
 
 
-                split = 4  # Number of splits in each dimension (e.g., 3x3 grid)
+                split = 4  
 
                 block_width = width // split
                 block_height = height // split
@@ -620,113 +620,43 @@ class YOLOV8:
                         blocks.append(block)
 
 
-                
 
-                b1, g1, r1= cv.split(blocks[0])
+                b=[]
+                g=[]
+                r=[]
 
-                b2, g2, r2= cv.split(blocks[1])
-
-                b3, g3, r3= cv.split(blocks[2])
-
-                b4, g4, r4= cv.split(blocks[3])
-
-                b5, g5, r5= cv.split(blocks[4])
-
-                b6, g6, r6= cv.split(blocks[5])
-
-                b7, g7, r7= cv.split(blocks[6])
-
-                b8, g8, r8= cv.split(blocks[7])
-
-                b9, g9, r9= cv.split(blocks[8])
-
-                b10, g10, r10= cv.split(blocks[9])
-
-                b11, g11, r11= cv.split(blocks[10])
-
-                b12, g12, r12= cv.split(blocks[11])
-
-                b13, g13, r13= cv.split(blocks[12])
-
-                b14, g14, r14= cv.split(blocks[13])
-
-                b15, g15, r15= cv.split(blocks[14])
-
-                b16, g16, r16= cv.split(blocks[15])
+                for i in range(split*split):
+                    
+                    m1,m2,m3= cv.split(blocks[i])
+                    b.append(m1)
+                    g.append(m2)
+                    r.append(m3)
 
 
+                b_var=[]
+                g_var=[]
+                r_var=[]
+
+                for i in range(split*split):
+                    for j in range(i+1, split*split):
+                        b_var.append(np.var(b[i])*np.var(b[j]))
+                        g_var.append(np.var(g[i])*np.var(g[j]))
+                        r_var.append(np.var(r[i]*np.var(r[j])))
+                        
 
 
-
-
-                b=np.array([np.var(b1)*np.var(b2), np.var(b1)*np.var(b3), np.var(b1)*np.var(b4), np.var(b1)*np.var(b5),np.var(b1)*np.var(b6),np.var(b1)*np.var(b7),np.var(b1)*np.var(b8),np.var(b1)*np.var(b9),np.var(b1)*np.var(b10),np.var(b1)*np.var(b11),np.var(b1)*np.var(b12),np.var(b1)*np.var(b13),np.var(b1)*np.var(b14),np.var(b1)*np.var(b15),np.var(b1)*np.var(b16),
-                np.var(b2)*np.var(b3), np.var(b2)*np.var(b4), np.var(b2)*np.var(b5),np.var(b2)*np.var(b6),np.var(b2)*np.var(b7),np.var(b2)*np.var(b8),np.var(b2)*np.var(b9),np.var(b2)*np.var(b10),np.var(b2)*np.var(b11),np.var(b2)*np.var(b12),np.var(b2)*np.var(b13),np.var(b2)*np.var(b14),np.var(b2)*np.var(b15),np.var(b2)*np.var(b16),
-                np.var(b3)*np.var(b4), np.var(b3)*np.var(b5), np.var(b3)*np.var(b6),np.var(b3)*np.var(b7),np.var(b3)*np.var(b8),np.var(b3)*np.var(b9),np.var(b3)*np.var(b10),np.var(b3)*np.var(b11),np.var(b3)*np.var(b12),np.var(b3)*np.var(b13),np.var(b3)*np.var(b14),np.var(b3)*np.var(b15),np.var(b3)*np.var(b16),
-                np.var(b4)*np.var(b5), np.var(b4)*np.var(b6), np.var(b4)*np.var(b7),np.var(b4)*np.var(b8),np.var(b4)*np.var(b9),np.var(b4)*np.var(b10),np.var(b4)*np.var(b11),np.var(b4)*np.var(b12),np.var(b4)*np.var(b13),np.var(b4)*np.var(b14),np.var(b4)*np.var(b15),np.var(b4)*np.var(b16),
-                np.var(b5)*np.var(b6), np.var(b5)*np.var(b7), np.var(b5)*np.var(b8),np.var(b5)*np.var(b9),np.var(b5)*np.var(b10),np.var(b5)*np.var(b11),np.var(b5)*np.var(b12),np.var(b5)*np.var(b13),np.var(b5)*np.var(b14),np.var(b5)*np.var(b15),np.var(b5)*np.var(b16),
-                np.var(b6)*np.var(b7), np.var(b6)*np.var(b8), np.var(b6)*np.var(b9),np.var(b6)*np.var(b10),np.var(b6)*np.var(b11),np.var(b6)*np.var(b12),np.var(b6)*np.var(b13),np.var(b6)*np.var(b14),np.var(b6)*np.var(b15),np.var(b6)*np.var(b16),
-                np.var(b7)*np.var(b8), np.var(b7)*np.var(b9), np.var(b7)*np.var(b10),np.var(b7)*np.var(b11),np.var(b7)*np.var(b12),np.var(b7)*np.var(b13),np.var(b7)*np.var(b14),np.var(b7)*np.var(b15),np.var(b7)*np.var(b16),
-                np.var(b8)*np.var(b9), np.var(b8)*np.var(b10),np.var(b8)*np.var(b11),np.var(b8)*np.var(b12),np.var(b8)*np.var(b13),np.var(b8)*np.var(b14),np.var(b8)*np.var(b15),np.var(b8)*np.var(b16),
-                np.var(b9)*np.var(b10),np.var(b9)*np.var(b11),np.var(b9)*np.var(b12),np.var(b9)*np.var(b13),np.var(b9)*np.var(b14),np.var(b9)*np.var(b15),np.var(b9)*np.var(b16),
-                np.var(b10)*np.var(b11),np.var(b10)*np.var(b12),np.var(b10)*np.var(b13),np.var(b10)*np.var(b14),np.var(b10)*np.var(b15),np.var(b10)*np.var(b16),
-                np.var(b11)*np.var(b12),np.var(b11)*np.var(b13),np.var(b11)*np.var(b14),np.var(b11)*np.var(b15),np.var(b11)*np.var(b16),
-                np.var(b12)*np.var(b13),np.var(b12)*np.var(b14),np.var(b12)*np.var(b15),np.var(b12)*np.var(b16),
-                np.var(b13)*np.var(b14),np.var(b13)*np.var(b15),np.var(b13)*np.var(b16),
-                np.var(b14)*np.var(b15),np.var(b14)*np.var(b16),
-                np.var(b15)*np.var(b16),
-
-                ])
-
-                g=np.array([np.var(g1)*np.var(g2), np.var(g1)*np.var(g3), np.var(g1)*np.var(g4), np.var(g1)*np.var(g5),np.var(g1)*np.var(g6),np.var(g1)*np.var(g7),np.var(g1)*np.var(g8),np.var(g1)*np.var(g9),np.var(g1)*np.var(g10),np.var(g1)*np.var(g11),np.var(g1)*np.var(g12),np.var(g1)*np.var(g13),np.var(g1)*np.var(g14),np.var(g1)*np.var(g15),np.var(g1)*np.var(g16),
-                np.var(g2)*np.var(g3), np.var(g2)*np.var(g4), np.var(g2)*np.var(g5),np.var(g2)*np.var(g6),np.var(g2)*np.var(g7),np.var(g2)*np.var(g8),np.var(g2)*np.var(g9),np.var(g2)*np.var(g10),np.var(g2)*np.var(g11),np.var(g2)*np.var(g12),np.var(g2)*np.var(g13),np.var(g2)*np.var(g14),np.var(g2)*np.var(g15),np.var(g2)*np.var(g16),
-                np.var(g3)*np.var(g4), np.var(g3)*np.var(g5), np.var(g3)*np.var(g6),np.var(g3)*np.var(g7),np.var(g3)*np.var(g8),np.var(g3)*np.var(g9),np.var(g3)*np.var(g10),np.var(g3)*np.var(g11),np.var(g3)*np.var(g12),np.var(g3)*np.var(g13),np.var(g3)*np.var(g14),np.var(g3)*np.var(g15),np.var(g3)*np.var(g16),
-                np.var(g4)*np.var(g5), np.var(g4)*np.var(g6), np.var(g4)*np.var(g7),np.var(g4)*np.var(g8),np.var(g4)*np.var(g9),np.var(g4)*np.var(g10),np.var(g4)*np.var(g11),np.var(g4)*np.var(g12),np.var(g4)*np.var(g13),np.var(g4)*np.var(g14),np.var(g4)*np.var(g15),np.var(g4)*np.var(g16),
-                np.var(g5)*np.var(g6), np.var(g5)*np.var(g7), np.var(g5)*np.var(g8),np.var(g5)*np.var(g9),np.var(g5)*np.var(g10),np.var(g5)*np.var(g11),np.var(g5)*np.var(g12),np.var(g5)*np.var(g13),np.var(g5)*np.var(g14),np.var(g5)*np.var(g15),np.var(g5)*np.var(g16),
-                np.var(g6)*np.var(g7), np.var(g6)*np.var(g8), np.var(g6)*np.var(g9),np.var(g6)*np.var(g10),np.var(g6)*np.var(g11),np.var(g6)*np.var(g12),np.var(g6)*np.var(g13),np.var(g6)*np.var(g14),np.var(g6)*np.var(g15),np.var(g6)*np.var(g16),
-                np.var(g7)*np.var(g8), np.var(g7)*np.var(g9), np.var(g7)*np.var(g10),np.var(g7)*np.var(g11),np.var(g7)*np.var(g12),np.var(g7)*np.var(g13),np.var(g7)*np.var(g14),np.var(g7)*np.var(g15),np.var(g7)*np.var(g16),
-                np.var(g8)*np.var(g9), np.var(g8)*np.var(g10),np.var(g8)*np.var(g11),np.var(g8)*np.var(g12),np.var(g8)*np.var(g13),np.var(g8)*np.var(g14),np.var(g8)*np.var(g15),np.var(g8)*np.var(g16),
-                np.var(g9)*np.var(g10),np.var(g9)*np.var(g11),np.var(g9)*np.var(g12),np.var(g9)*np.var(g13),np.var(g9)*np.var(g14),np.var(g9)*np.var(g15),np.var(g9)*np.var(g16),
-                np.var(g10)*np.var(g11),np.var(g10)*np.var(g12),np.var(g10)*np.var(g13),np.var(g10)*np.var(g14),np.var(g10)*np.var(g15),np.var(g10)*np.var(g16),
-                np.var(g11)*np.var(g12),np.var(g11)*np.var(g13),np.var(g11)*np.var(g14),np.var(g11)*np.var(g15),np.var(g11)*np.var(g16),
-                np.var(g12)*np.var(g13),np.var(g12)*np.var(g14),np.var(g12)*np.var(g15),np.var(g12)*np.var(g16),
-                np.var(g13)*np.var(g14),np.var(g13)*np.var(g15),np.var(g13)*np.var(g16),
-                np.var(g14)*np.var(g15),np.var(g14)*np.var(g16),
-                np.var(g15)*np.var(g16),
-
-                ])
-
-                r=np.array([np.var(r1)*np.var(r2), np.var(r1)*np.var(r3), np.var(r1)*np.var(r4), np.var(r1)*np.var(r5),np.var(r1)*np.var(r6),np.var(r1)*np.var(r7),np.var(r1)*np.var(r8),np.var(r1)*np.var(r9),np.var(r1)*np.var(r10),np.var(r1)*np.var(r11),np.var(r1)*np.var(r12),np.var(r1)*np.var(r13),np.var(r1)*np.var(r14),np.var(r1)*np.var(r15),np.var(r1)*np.var(r16),
-                np.var(r2)*np.var(r3), np.var(r2)*np.var(r4), np.var(r2)*np.var(r5),np.var(r2)*np.var(r6),np.var(r2)*np.var(r7),np.var(r2)*np.var(r8),np.var(r2)*np.var(r9),np.var(r2)*np.var(r10),np.var(r2)*np.var(r11),np.var(r2)*np.var(r12),np.var(r2)*np.var(r13),np.var(r2)*np.var(r14),np.var(r2)*np.var(r15),np.var(r2)*np.var(r16),
-                np.var(r3)*np.var(r4), np.var(r3)*np.var(r5), np.var(r3)*np.var(r6),np.var(r3)*np.var(r7),np.var(r3)*np.var(r8),np.var(r3)*np.var(r9),np.var(r3)*np.var(r10),np.var(r3)*np.var(r11),np.var(r3)*np.var(r12),np.var(r3)*np.var(r13),np.var(r3)*np.var(r14),np.var(r3)*np.var(r15),np.var(r3)*np.var(r16),
-                np.var(r4)*np.var(r5), np.var(r4)*np.var(r6), np.var(r4)*np.var(r7),np.var(r4)*np.var(r8),np.var(r4)*np.var(r9),np.var(r4)*np.var(r10),np.var(r4)*np.var(r11),np.var(r4)*np.var(r12),np.var(r4)*np.var(r13),np.var(r4)*np.var(r14),np.var(r4)*np.var(r15),np.var(r4)*np.var(r16),
-                np.var(r5)*np.var(r6), np.var(r5)*np.var(r7), np.var(r5)*np.var(r8),np.var(r5)*np.var(r9),np.var(r5)*np.var(r10),np.var(r5)*np.var(r11),np.var(r5)*np.var(r12),np.var(r5)*np.var(r13),np.var(r5)*np.var(r14),np.var(r5)*np.var(r15),np.var(r5)*np.var(r16),
-                np.var(r6)*np.var(r7), np.var(r6)*np.var(r8), np.var(r6)*np.var(r9),np.var(r6)*np.var(r10),np.var(r6)*np.var(r11),np.var(r6)*np.var(r12),np.var(r6)*np.var(r13),np.var(r6)*np.var(r14),np.var(r6)*np.var(r15),np.var(r6)*np.var(r16),
-                np.var(r7)*np.var(r8), np.var(r7)*np.var(r9), np.var(r7)*np.var(r10),np.var(r7)*np.var(r11),np.var(r7)*np.var(r12),np.var(r7)*np.var(r13),np.var(r7)*np.var(r14),np.var(r7)*np.var(r15),np.var(r7)*np.var(r16),
-                np.var(r8)*np.var(r9), np.var(r8)*np.var(r10),np.var(r8)*np.var(r11),np.var(r8)*np.var(r12),np.var(r8)*np.var(r13),np.var(r8)*np.var(r14),np.var(r8)*np.var(r15),np.var(r8)*np.var(r16),
-                np.var(r9)*np.var(r10),np.var(r9)*np.var(r11),np.var(r9)*np.var(r12),np.var(r9)*np.var(r13),np.var(r9)*np.var(r14),np.var(r9)*np.var(r15),np.var(r9)*np.var(r16),
-                np.var(r10)*np.var(r11),np.var(r10)*np.var(r12),np.var(r10)*np.var(r13),np.var(r10)*np.var(r14),np.var(r10)*np.var(r15),np.var(r10)*np.var(r16),
-                np.var(r11)*np.var(r12),np.var(r11)*np.var(r13),np.var(r11)*np.var(r14),np.var(r11)*np.var(r15),np.var(r11)*np.var(r16),
-                np.var(r12)*np.var(r13),np.var(r12)*np.var(r14),np.var(r12)*np.var(r15),np.var(r12)*np.var(r16),
-                np.var(r13)*np.var(r14),np.var(r13)*np.var(r15),np.var(r13)*np.var(r16),
-                np.var(r14)*np.var(r15),np.var(r14)*np.var(r16),
-                np.var(r15)*np.var(r16),
-
-                ])
-
-
-
-
-                b=b/(width*height)
+                b=b_var/(width*height)
                 b=b.astype(int)
                 b=np.sort(b)
 
-                g=g/(width*height)
+                g=g_var/(width*height)
                 g=g.astype(int)
                 g=np.sort(g)                
                 
-                r=r/(width*height)
+                r=r_var/(width*height)
                 r=r.astype(int)
                 r=np.sort(r)
+
 
 
 
