@@ -609,7 +609,7 @@ class YOLOV8:
 
 
 
-                split = 3  # Number of splits in each dimension (e.g., 3x3 grid)
+                split = 2  # Number of splits in each dimension (e.g., 3x3 grid)
 
                 block_width = width // split
                 block_height = height // split
@@ -732,7 +732,7 @@ class YOLOV8:
 
 
 
-                unique_id=np.hstack((int(cls_id), b,g,r, confidence, x1,y1,x2,y2))
+                unique_id=np.hstack((int(cls_id), b,g,r, confidence, x1/2,y1/2,x2/2,y2/2))
                 unique_ids.append(unique_id)
 
  
@@ -740,11 +740,6 @@ class YOLOV8:
 
 
         return unique_ids
-
-
-
-
-
 
 
 
@@ -970,6 +965,11 @@ class BboxesPlotter:
         except Exception as e:
             print("Error:", e)
 
+        # cv.imshow("image", im0)
+        # cv.waitKey(0)
+        # cv.destroyAllWindows()
+
+
 
 #end of yolov8
 
@@ -1039,7 +1039,7 @@ if __name__ == '__main__':
 
     start3 = time.time()
 
-    cut_threshold=120
+    cut_threshold=100
 
     if len(unique_ids1)> len(unique_ids2):
 
