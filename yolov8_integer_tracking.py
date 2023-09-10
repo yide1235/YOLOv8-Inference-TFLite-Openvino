@@ -558,6 +558,9 @@ class YOLOV8:
         return boxes
 
 
+
+
+
     def output_id(self, image, results):
 
         # load image
@@ -736,6 +739,11 @@ class YOLOV8:
 
 
 
+
+
+
+
+
     # ssim not working because the definition of covariance is positional encoding 
     # def ssim(self, image1, results1,bit_depth1, image2, results2, bit_depth2):
 
@@ -894,6 +902,16 @@ class YOLOV8:
 
 
 
+
+    # def mix_solution(self, file, result):
+
+    #     #file is an address, result is in shape [x1,x2,x3,x4, confidence, class]
+
+
+
+
+
+
 class BboxesPlotter:
     def __init__(self) -> None:
         self.colors = self.Colors()
@@ -961,7 +979,91 @@ class BboxesPlotter:
 
 
 
-#single image tracking usiong covariance
+
+
+
+#############################two images tracking using mix solution
+
+
+# if __name__ == '__main__':
+#     image_folder = './test'
+#     output_folder = './out/'
+    
+
+#     # init_tracker()
+
+#     yolo = YOLOV8()
+#     plotter = BboxesPlotter()
+
+#     image_files = glob.glob(f'{image_folder}/*.[jp][pn][ge]')
+#     sorted_image_files = sorted(image_files)
+
+    
+   
+#     file1=sorted_image_files[0]
+#     #should iterative twice
+
+#     start1 = time.time()
+    
+    
+
+#     results1 = yolo.detect(file1)
+
+#     unique_ids1=yolo.mix_solution(file1,results1)
+
+#     save_name1 = output_folder + file1.split('/')[-1]
+#     # plotter.plot_bboxes(file, results, save_name)
+
+#     print(f'Processing {file1} - time: {time.time() - start1} s')
+
+
+#     file2=sorted_image_files[1]
+#     #should iterative twice
+
+
+
+
+
+
+#     start2 = time.time()
+    
+    
+
+#     results2 = yolo.detect(file2)
+
+#     unique_ids2=yolo.mix_solution(file2,results2)
+    
+
+#     save_name2 = output_folder + file2.split('/')[-1]
+#     # plotter.plot_bboxes(file, results, save_name)
+
+#     print(f'Processing {file2} - time: {time.time() - start2} s')
+
+
+#     start3 = time.time()
+
+#     cut_threshold=250
+
+        
+
+#     # plotter.plot_bboxes(file1, results1, save_name1, ids1)
+#     # plotter.plot_bboxes(file2, results2, save_name2, ids2)
+
+
+#     print(f'Processing {file1, file2} - time: {time.time() - start3} s')
+
+
+
+
+
+
+
+
+
+
+
+
+##########################single image tracking using covariance
 
 
 if __name__ == '__main__':
