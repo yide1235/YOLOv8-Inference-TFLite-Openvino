@@ -8,6 +8,8 @@ import glob
 import numpy as np
 import cv2 as cv
 import tflite_runtime.interpreter as tflite
+
+
 #from tqdm import tqdm
 #end of the environment for yolov8
 
@@ -615,8 +617,6 @@ class YOLOV8:
             width=np.abs(y1-y2)
             height=np.abs(x1-x2)
 
-
-
                 
 
             #now using 9
@@ -995,12 +995,6 @@ class BboxesPlotter:
 
 
 
-
-
-
-
-
-
 ##########################single image tracking using covariance
 
 
@@ -1168,7 +1162,10 @@ if __name__ == '__main__':
 
 
 
-#########################################33video no tracking
+
+
+
+###########################################video no tracking
 # if __name__ == '__main__':
 
 
@@ -1223,6 +1220,11 @@ if __name__ == '__main__':
 
 
 
+
+
+
+
+
  
 
 # ###########################################just image inference
@@ -1263,6 +1265,9 @@ if __name__ == '__main__':
 #         print(f'Processing {file} - time: {time.time() - start} s')
 
 #         save_name = output_folder + file.split('/')[-1]
+
+
+
 
 
 
