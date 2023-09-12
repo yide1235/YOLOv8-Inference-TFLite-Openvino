@@ -9,6 +9,10 @@ import numpy as np
 import cv2 as cv
 import tflite_runtime.interpreter as tflite
 
+from sklearn.metrics.pairwise import cosine_similarity
+
+
+
 
 #from tqdm import tqdm
 #end of the environment for yolov8
@@ -601,9 +605,16 @@ class YOLOV8:
 
             x1, y1, x2, y2=map(int, x)
 
-            
+            width_25=int((y2-y1)/4)
+            height_25=int((x2-x1)/4)
 
-            detected=image[y1:y2, x1:x2]
+
+            if y1-width_25>0 and x1-height_25>0 and y2+width_25<image.shape[0] and x2+height_25<image.shape[1]:
+
+                detected=image[(y1-width_25):(y2+width_25), (x1-height_25):(x2+height_25)]
+            else:
+                detected=image[y1:y2, x1:x2]
+
 
             # # cv.imwrite('./detected.jpg', detected) 
 
@@ -658,6 +669,8 @@ class YOLOV8:
                         b_var.append(np.var(b[i])*np.var(b[j]))
                         g_var.append(np.var(g[i])*np.var(g[j]))
                         r_var.append(np.var(r[i])*np.var(r[j]))
+
+
                         
 
 
@@ -672,9 +685,6 @@ class YOLOV8:
                 r=r_var/(width*height)
                 r=r.astype(int)
                 r=np.sort(r)
-
-
-
 
 
             #     #rank
@@ -724,8 +734,12 @@ class YOLOV8:
 
 
                 for i in range(len(b)):
-
-                    b[i]=(b[i]-b_min)/binterval+1
+                    if binterval != 0:
+                        b[i] = (b[i] - b_min) / binterval + 1
+                    else:
+                        # Handle the case where binterval is zero (or any other invalid value)
+                        # You can assign a default value or raise an exception depending on your logic.
+                        b[i] = 0 
 
 
                 g_max=np.max(g)
@@ -733,7 +747,10 @@ class YOLOV8:
                 ginterval=(g_max-g_min)/(len(g)-1)
                 # print(ginterval)
                 for i in range(len(g)):
-                    g[i]=(g[i]-g_min)/ginterval+1
+                    if ginterval !=0:
+                        g[i]=(g[i]-g_min)/ginterval+1
+                    else:
+                        g[i]=0
 
                 r_max=np.max(r)
                 r_min=np.min(r)
@@ -741,22 +758,205 @@ class YOLOV8:
                 rinterval=(r_max-r_min)/(len(r)-1)
                 # print(rinterval)
                 for i in range(len(r)):
-                    r[i]=(r[i]-r_min)/rinterval+1
-
-                temp=np.hstack((b, g, r))
-                unique_id=np.linalg.norm(temp)
-                unique_id=np.hstack((confidence, unique_id))
-
+                    if rinterval !=0:
+                        r[i]=(r[i]-r_min)/rinterval+1
+                    else:
+                        r[i]=0
 
 
-                unique_id=np.hstack((int(cls_id), b,g,r, confidence, x1/2,y1/2,x2/2,y2/2))
+                unique_id=np.hstack((10*int(cls_id), b,g,r, confidence*100, x1/3,y1/3,x2/3,y2/3))
                 unique_ids.append(unique_id)
+
+
+
+                # split2=1000
+
+
+                # b_mean=[]
+                # g_mean=[]
+                # r_mean=[]
+                # for i in range(split):
+                #     # block = detected[i * block_width: (i + 1) * block_width, 0: (j + 1) * height]
+                #     block2=detected[0: width, i * block_height: (i + 1) * block_height]
+                #     blocks.append(block)
+                #     blocks.append(block2)
+
+                # for i in blocks:
+                #     bmean,gmean,rmean=cv.split(i)
+                #     b_mean.append(bmean)
+                #     g_mean.append(gmean)
+                #     r_mean.append(rmean)
+
+                # b_mean2=[]
+                # g_mean2=[]
+                # r_mean2=[]
+                # for i in b_mean:
+                #     b_mean2.append(np.var(i))
+                # for i in g_mean:
+                #     g_mean2.append(np.var(i))
+
+                # for i in r_mean:
+                #     r_mean2.append(np.var(i))
+
+                # b_mean2=np.array(b_mean2)
+                # g_mean2=np.array(g_mean2)
+                # r_mean2=np.array(r_mean2)
+
+                # b_mean2=np.sort(b_mean2)
+                # g_mean2=np.sort(g_mean2)
+                # r_mean2=np.sort(r_mean2)
+
+
+
+
+                # b_mean2_max=np.max(b_mean2)
+
+                # b_mean2_min=np.min(b_mean2)
+ 
+                # binterval_mean=(b_mean2_max-b_mean2_min)/(len(b_mean2)-1)
+
+
+                # for i in range(len(b_mean2)):
+                #     if binterval_mean != 0:
+                #         b_mean2[i] = (b_mean2[i] - b_mean2_min) / binterval_mean + 1
+                #     else:
+                #         # Handle the case where binterval is zero (or any other invalid value)
+                #         # You can assign a default value or raise an exception depending on your logic.
+                #         b_mean2[i] = 0 
+
+
+                # g_mean2_max=np.max(g_mean2)
+
+                # g_mean2_min=np.min(g_mean2)
+ 
+                # ginterval_mean=(g_mean2_max-g_mean2_min)/(len(g_mean2)-1)
+
+
+                # for i in range(len(g_mean2)):
+                #     if ginterval_mean != 0:
+                #         g_mean2[i] = (g_mean2[i] - g_mean2_min) / ginterval_mean + 1
+                #     else:
+                #         # Handle the case where ginterval is zero (or any other invalid value)
+                #         # You can assign a default value or raise an exception depending on your logic.
+                #         g_mean2[i] = 0 
+
+
+
+                # r_mean2_max=np.max(r_mean2)
+
+                # r_mean2_min=np.min(r_mean2)
+ 
+                # rinterval_mean=(r_mean2_max-r_mean2_min)/(len(r_mean2)-1)
+
+
+                # for i in range(len(r_mean2)):
+                #     if rinterval_mean != 0:
+                #         r_mean2[i] = (r_mean2[i] - r_mean2_min) / rinterval_mean + 1
+                #     else:
+                #         # Handle the case where binterval is zero (or any other invalid value)
+                #         # You can assign a default value or raise an exception depending on your logic.
+                #         r_mean2[i] = 0 
+
+
+                # unique_id=np.hstack((10*int(cls_id), b,g,r,b_mean2,g_mean2,r_mean2, confidence*100, x1/3,y1/3,x2/3,y2/3))
+                # unique_ids.append(unique_id)
 
  
 
-
-
         return unique_ids
+
+
+    def compare(self, results1, unique_ids1, results2, unique_ids2):
+
+        cut_threshold=60
+
+        if len(unique_ids1)> len(unique_ids2):
+
+
+            # ids1=np.arange(0, len(unique_ids1))
+            ids1={i:[i,-1] for i in range(len(unique_ids1))}
+
+            ids2 = {}
+
+            addition=1
+
+            # Iterate through the vectors in list2
+            for i, vec2 in enumerate(unique_ids2):
+                min_norm = float('inf')
+                matching_id2 = -1
+
+                # Compare with vectors in list1
+                for j, vec1 in enumerate(unique_ids1):
+                    if vec1[0]==vec2[0]:
+                        norm = np.linalg.norm(vec1[1:]- vec2[1:])
+
+                        if norm < min_norm:
+                            min_norm = norm
+                            matching_id2 = j
+                    else:
+                        nin_norm=-1
+                        matching_id2-1
+
+                if cut_threshold> min_norm:
+                    ids2[i]=[matching_id2,min_norm]
+                else:
+                    ids2[i]=[-1,-1]
+
+            for key1,value1 in ids2.items():
+
+                for key2,value2 in ids2.items():
+                    if key1!=key2 and value1[0]==value2[0] and value1[0]!=-1:
+
+                            if value1[1]>value2[1]:
+                                value2[0]=len(unique_ids1)+addition
+                                addition+=1
+                            else:
+                                value1[0]=len(unique_ids1)+addition
+                                addition+=1
+                
+        else:
+            ids2={i:[i,-1] for i in range(len(unique_ids2))}
+
+            ids1 ={}
+
+            addition=1
+
+
+            # Iterate through the vectors in list1
+            for i, vec1 in enumerate(unique_ids1):
+                min_norm1 = float('inf')
+                matching_id = -1
+
+                # Compare with vectors in list2
+                # print(vec1.shape)
+                for j, vec2 in enumerate(unique_ids2):
+
+                    if vec1[0]==vec2[0]:
+                        norm = np.linalg.norm(vec2[1:]- vec1[1:])
+
+
+                        if norm < min_norm1:
+                            min_norm1 = norm
+                            matching_id = j
+
+
+                if cut_threshold> min_norm1:
+                    ids1[i]=[matching_id,min_norm1]
+                else:
+                    ids1[i]=[-1,-1]
+
+            for key1,value1 in ids1.items():
+
+                for key2,value2 in ids1.items():
+                    if key1!=key2 and value1[0]==value2[0]:
+                            # print(ids1[key1][0],ids1[key2][0])
+                            if value1[1]>value2[1]:
+                                value2[0]=len(unique_ids1)+addition
+                                addition+=1
+                            else:
+                                value1[0]=len(unique_ids1)+addition
+                                addition+=1
+        return ids1, ids2
 
 
 
@@ -956,10 +1156,10 @@ class BboxesPlotter:
         
         return im
 
-    def plot_bboxes(self, img_path, results, save_path, id):
+    def plot_bboxes(self, img_path, results, save_path=None, id=None):
         
         im0 = cv.imread(img_path)
-
+        # im0=img_path
 
         for i,value in enumerate(results):
             bbox=value[:4]
@@ -986,6 +1186,9 @@ class BboxesPlotter:
         # cv.waitKey(0)
         # cv.destroyAllWindows()
 
+        #if it is using a vide, comment the image output out then return the im0
+        # return im0
+
 
 
 #end of yolov8
@@ -999,165 +1202,76 @@ class BboxesPlotter:
 
 
 if __name__ == '__main__':
-    image_folder = './test'
-    output_folder = './out/'
-    
-
-    # init_tracker()
-
-    yolo = YOLOV8()
-    plotter = BboxesPlotter()
-
-    image_files = glob.glob(f'{image_folder}/*.[jp][pn][ge]')
-    sorted_image_files = sorted(image_files)
-
-    
-   
-    file1=sorted_image_files[0]
-    #should iterative twice
-
-    start1 = time.time()
-    
-    
-
-    results1 = yolo.detect(file1)
-
-    unique_ids1=yolo.output_id(file1,results1)
-
-    save_name1 = output_folder + file1.split('/')[-1]
-    # plotter.plot_bboxes(file, results, save_name)
-
-    print(f'Processing {file1} - time: {time.time() - start1} s')
 
 
-    file2=sorted_image_files[1]
-    #should iterative twice
-
-    start2 = time.time()
-    
-    
-
-    results2 = yolo.detect(file2)
-
-    unique_ids2=yolo.output_id(file2,results2)
-    
-
-    save_name2 = output_folder + file2.split('/')[-1]
-    # plotter.plot_bboxes(file, results, save_name)
-
-    print(f'Processing {file2} - time: {time.time() - start2} s')
-
-
-    start3 = time.time()
-
-    cut_threshold=100
-
-    if len(unique_ids1)> len(unique_ids2):
-
-
-        # ids1=np.arange(0, len(unique_ids1))
-        ids1={i:[i,-1] for i in range(len(unique_ids1))}
-
-        ids2 = {}
-
-        addition=1
-
-
-
-        # Iterate through the vectors in list2
-        for i, vec2 in enumerate(unique_ids2):
-            min_norm = float('inf')
-            matching_id2 = -1
-
-            # Compare with vectors in list1
-            for j, vec1 in enumerate(unique_ids1):
-                if vec1[0]==vec2[0]:
-                    norm = np.linalg.norm(vec1[1:]- vec2[1:])
-                    if norm < min_norm:
-                        min_norm = norm
-                        matching_id2 = j
-                else:
-                    nin_norm=-1
-                    matching_id2-1
-
-            if cut_threshold> min_norm:
-                ids2[i]=[matching_id2,min_norm]
-            else:
-                ids2[i]=[-1,-1]
-
-        for key1,value1 in ids2.items():
-
-            for key2,value2 in ids2.items():
-                if key1!=key2 and value1[0]==value2[0] and value1[0]!=-1:
-                        # print(ids2[key1][0],ids2[key2][0])
-                        if value1[1]>value2[1]:
-                            value2[0]=len(unique_ids1)+addition
-                            addition+=1
-                        else:
-                            value1[0]=len(unique_ids1)+addition
-                            addition+=1
-
-
-
-
-
-            
-    else:
-        ids2={i:[i,-1] for i in range(len(unique_ids2))}
-
-        ids1 ={}
-
-        addition=1
-
-
-
-        # Iterate through the vectors in list1
-        for i, vec1 in enumerate(unique_ids1):
-            min_norm1 = float('inf')
-            matching_id = -1
-
-            # Compare with vectors in list2
-            # print(vec1.shape)
-            for j, vec2 in enumerate(unique_ids2):
-
-                if vec1[0]==vec2[0]:
-                    norm = np.linalg.norm(vec2[1:]- vec1[1:])
-                    if norm < min_norm1:
-                        min_norm1 = norm
-                        matching_id = j
-
-
-            if cut_threshold> min_norm1:
-                ids1[i]=[matching_id,min_norm1]
-            else:
-                ids1[i]=[-1,-1]
-
-        for key1,value1 in ids1.items():
-
-            for key2,value2 in ids1.items():
-                if key1!=key2 and value1[0]==value2[0]:
-                        # print(ids1[key1][0],ids1[key2][0])
-                        if value1[1]>value2[1]:
-                            value2[0]=len(unique_ids1)+addition
-                            addition+=1
-                        else:
-                            value1[0]=len(unique_ids1)+addition
-                            addition+=1
+    for x in range(1,9):
+        image_folder = './test/test_case'+str(x)
+        output_folder = './out/'
         
-    # print(results1)
-    # print(results2)
 
-    # print(ids1)
-    # print(ids2)
+        # init_tracker()
+
+        yolo = YOLOV8()
+        plotter = BboxesPlotter()
+
+        image_files = glob.glob(f'{image_folder}/*.[jp][pn][ge]')
+        sorted_image_files = sorted(image_files)
+
+        
+    
+        file1=sorted_image_files[0]
+        #should iterative twice
+
+        start1 = time.time()
+        
+        
+
+        results1 = yolo.detect(file1)
+
+        unique_ids1=yolo.output_id(file1,results1)
+
+        save_name1 = output_folder + file1.split('/')[-1]
+
+        # plotter.plot_bboxes(file, results, save_name)
+
+        print(f'Processing {file1} - time: {time.time() - start1} s')
 
 
-    plotter.plot_bboxes(file1, results1, save_name1, ids1)
-    plotter.plot_bboxes(file2, results2, save_name2, ids2)
+        file2=sorted_image_files[1]
+        #should iterative twice
+
+        start2 = time.time()
+        
+        
+
+        results2 = yolo.detect(file2)
+
+        unique_ids2=yolo.output_id(file2,results2)
+        
+
+        save_name2 = output_folder + file2.split('/')[-1]
+        
+        # plotter.plot_bboxes(file, results, save_name)
+
+        print(f'Processing {file2} - time: {time.time() - start2} s')
 
 
-    print(f'Processing {file1, file2} - time: {time.time() - start3} s')
+        start3 = time.time()
+
+        ids1,ids2=yolo.compare(results1, unique_ids1, results2, unique_ids2)
+
+        # print(results1)
+        # print(results2)
+
+        print(ids1)
+        print(ids2)
 
 
+        plotter.plot_bboxes(file1, results1, save_name1, ids1)
+        plotter.plot_bboxes(file2, results2, save_name2, ids2)
+
+
+        print(f'Processing {file1, file2} - time: {time.time() - start3} s')
 
 
 
