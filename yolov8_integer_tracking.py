@@ -9,8 +9,22 @@ import numpy as np
 import cv2 as cv
 import tflite_runtime.interpreter as tflite
 
-from sklearn.metrics.pairwise import cosine_similarity
 
+# Singular-value decomposition
+from numpy import array
+from scipy.linalg import svd
+import cv2
+import numpy as np
+import os
+import uuid
+# define a matrix
+#A = array([[1, 2], [3, 4], [5, 6]])
+#print(A)
+# SVD
+#U, s, VT = svd(A)
+#print(U)
+#print(s)
+#print(VT)
 
 
 
@@ -568,7 +582,52 @@ class YOLOV8:
         return boxes
 
 
+    def normalize(self,image):
+        # print(type(image))
+        
+        im = np.zeros((image.shape[0], image.shape[1], 3), dtype=float)
+        for x in range(0,image.shape[0]):
+            for y in range(0,image.shape[1]):
+                pixel = image[x,y]
+                #print("pixel was ", pixel)
+                div = max(pixel[0],pixel[1], pixel[2])
+                if div == 0:
+                    div = 1
+                lst = [float(pixel[0])/float(div), float(pixel[1])/float(div), float(pixel[2])/float(div)]
+                im[x,y] = lst
+                #print("image is ", im[x,y])
 
+        return im
+
+    #input a mxnx3 output a flat vector of the svd matrix
+    def calculate_svd(self, detected):
+        l1 = []
+        l2 = []
+        l3 = []
+        l4 = []
+
+        image1=yolo.normalize(detected)
+        height, width, channels = image1.shape
+        rc = image1[:, :, 0]  # Extract the first channel (red)
+        gc = image1[:, :, 1]  # Extract the second channel (green)
+        bc = image1[:, :, 2]  # Extract the third channel (blue)
+    
+        U, s, VT = svd(rc)
+        U2, s2, VT2 = svd(gc)
+        U3, s3, VT3 = svd(bc)
+        # print(s[:5])
+        # print(s2[:5])
+        # print(s3[:5])
+        l1.append(s[:5])
+        l2.append(s2[:5])
+        l3.append(s3[:5])
+        l4.append((height,width))
+        # print(l1)
+        # print(l2)
+        # print(l3)
+        # print(l4)
+
+        return  np.hstack((l1,l2,l3,l4))
 
 
     def output_id(self, image, results):
@@ -634,6 +693,9 @@ class YOLOV8:
 
 
             if detected.shape[0] and detected.shape[1]:
+
+
+                
 
 
 
@@ -764,8 +826,33 @@ class YOLOV8:
                         r[i]=0
 
 
-                unique_id=np.hstack((10*int(cls_id), b,g,r, confidence*100, x1/3,y1/3,x2/3,y2/3))
+                #add the color ratio
+
+                b_detected, g_detected, r_detected= cv.split(detected)
+                b_detected=np.var(b_detected)
+                g_detected=np.var(g_detected)
+                r_detected=np.var(r_detected)
+
+                unique_id=np.hstack((10*int(cls_id), b,g,r, confidence*100, x1/3,y1/3,x2/3,y2/3, b_detected/50, g_detected/50, r_detected/50))
                 unique_ids.append(unique_id)
+
+
+
+
+
+                # #add svd, didnot work:
+                # svd_vector=yolo.calculate_svd(detected)
+
+                # svd_vector=svd_vector.reshape(svd_vector.shape[1])
+
+                # unique_id=np.hstack((10*int(cls_id), b,g,r, 
+                # confidence*100, x1/3,y1/3,x2/3,y2/3, 
+                # b_detected/50, g_detected/50, r_detected/50,
+                # 10*svd_vector))
+
+                # unique_ids.append(unique_id)
+
+
 
 
 
@@ -868,7 +955,7 @@ class YOLOV8:
 
     def compare(self, results1, unique_ids1, results2, unique_ids2):
 
-        cut_threshold=60
+        cut_threshold=55
 
         if len(unique_ids1)> len(unique_ids2):
 
