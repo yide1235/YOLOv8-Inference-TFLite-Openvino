@@ -627,7 +627,24 @@ class YOLOV8:
         # print(l3)
         # print(l4)
 
-        return  np.hstack((l1,l2,l3,l4))
+        return  l1,l2,l3,l4
+
+
+    def get_score(self, l1,l2,l3,l4,c1,c2,c3,c4):
+        sum = 0
+        mag2 = 0
+        for x in range(0, len(l1)):
+            sum += pow(pow(l1[x]-c1[x],2) + pow(l2[x]-c2[x],2) + pow(l3[x]-c3[x],2),0.5)
+
+        for x in range(0, len(l4)):
+            mag2 += pow(l4[x]-c4[x],2)
+
+        mag2 = mag2 / pow((l4[0] * l4[1]) + (c4[0] * c4[1]),0.5)
+
+        mag1 = pow(sum,0.5)
+        mag2 = pow(mag2,0.5)
+        # print(mag1, mag2)
+        return mag1 + mag2
 
 
     def output_id(self, image, results):
@@ -664,8 +681,8 @@ class YOLOV8:
 
             x1, y1, x2, y2=map(int, x)
 
-            width_25=int((y2-y1)/4)
-            height_25=int((x2-x1)/4)
+            width_25=int((y2-y1))
+            height_25=int((x2-x1))
 
 
             if y1-width_25>0 and x1-height_25>0 and y2+width_25<image.shape[0] and x2+height_25<image.shape[1]:
@@ -831,9 +848,10 @@ class YOLOV8:
                 g_detected=np.var(g_detected)
                 r_detected=np.var(r_detected)
 
-                unique_id=np.hstack((10*(cls_id), b,g,r, confidence*100, x1/3,y1/3,x2/3,y2/3, b_detected/50, g_detected/50, r_detected/50))
+                # unique_id=np.hstack((10*(cls_id), b,g,r, confidence*100, x1/4,y1/4,x2/4,y2/4, b_detected/45, g_detected/45, r_detected/45))
+                unique_id=np.hstack((10*(cls_id), b,g,r, confidence*100, x1/3,y1/3,x2/3,y2/3, b_detected/45, g_detected/45, r_detected/45))
+                
                 unique_ids.append(unique_id)
-
 
 
 
@@ -950,9 +968,26 @@ class YOLOV8:
         return unique_ids
 
 
-    def compare(self, results1, unique_ids1, results2, unique_ids2):
+    def compare(self, file1, results1, unique_ids1, file2, results2, unique_ids2):
 
-        cut_threshold=55
+
+
+
+
+
+
+
+        image1 = cv.imread(file1)
+        image2 = cv.imread(file2)
+
+
+
+
+
+        svd_threshold=8
+
+
+        cut_threshold=40
 
         if len(unique_ids1)> len(unique_ids2):
 
@@ -984,11 +1019,13 @@ class YOLOV8:
 
                 if cut_threshold> min_norm:
                     ids2[i]=[matching_id2,min_norm, vec2[0]/10]
+                    #the longer one should be [index, -1(for not selected by covariance, 1 for selected by covariance), class_id]
+                    ids1[matching_id2][1]=1
                 else:
                     ids2[i]=[-1,-1,  vec2[0]/10]
+                    
 
 
-            
 
             for key1,value1 in ids2.items():
 
@@ -1007,6 +1044,58 @@ class YOLOV8:
                                 #so two with different class is now the same number, add either one with more index
                                 value1[0]=len(unique_ids1)+addition+1
                                 addition+=1
+
+
+
+
+
+            
+
+            for i in range(len(ids2)):
+                if ids2[i][0]==-1:
+                    x2=results2[i][:4]
+                    x21, y21, x22, y22=map(int, x2)
+                    detected2=image2[y21:y22, x21:x22]
+                    
+                    class_id2=results2[i][5]
+                    # print(results1[i][5], ids1[i][2])
+
+                
+                    index=-1
+                    min_score=1000000
+                    for j in range(len(ids1)):
+                        if ids1[j][1]==-1:
+                            x=results1[j][:4]
+                            x1, y1, x2, y2=map(int, x)
+                            detected1=image1[y1:y2, x1:x2]
+                            class_id1=results1[j][5]
+                            l1,l2,l3,l4=yolo.calculate_svd(detected2)
+
+                            
+
+                            if class_id1==class_id2:
+                                
+                                c1,c2,c3,c4=yolo.calculate_svd(detected1)
+                                
+                                for x in range(0,len(l1)):
+                                    
+                                    for y in range(0,len(c1)):
+                                        ms = yolo.get_score(l1[x],l2[x],l3[x],l4[x],c1[y],c2[y],c3[y],c4[y])
+                                        if ms < min_score:
+                                            min_score = ms
+                                            index=j
+                                            # print(i,min_score, index)
+
+
+                                        if min_score<svd_threshold:
+                                            ids2[i][0]=index
+                                            ids2[i][1]=-2
+            # print('11111111111')
+
+            # print(ids1)
+            # print(ids2)
+
+
 
         else:
             ids2={i:[i,-1, unique_ids2[i][0]/10] for i in range(len(unique_ids2))}
@@ -1039,9 +1128,10 @@ class YOLOV8:
 
 
                 if cut_threshold> min_norm1:
-                    ids1[i]=[matching_id,min_norm1,  vec2[0]/10]
+                    ids1[i]=[matching_id,min_norm1,  vec1[0]/10]
+                    ids2[matching_id][1]=1
                 else:
-                    ids1[i]=[-1,-1, vec2[0]/10]
+                    ids1[i]=[-1,-1, vec1[0]/10]
 
             # print(ids1, ids2,'---------------------')
 
@@ -1062,6 +1152,52 @@ class YOLOV8:
                             if value1[1]!=-1 and value2[1]!=-1:
                                 value1[0]=len(unique_ids2)+addition+1
                                 addition+=1
+        #here remeber ids2 is longer
+
+
+
+            for i in range(len(ids1)):
+                if ids1[i][0]==-1:
+                    x=results1[i][:4]
+                    x1, y1, x2, y2=map(int, x)
+                    detected1=image1[y1:y2, x1:x2]
+                    
+                    class_id1=results1[i][5]
+                    # print(results1[i][5], ids1[i][2])
+
+                
+                    index=-1
+                    min_score=1000000
+                    for j in range(len(ids2)):
+                        if ids2[j][1]==-1:
+                            x2=results2[j][:4]
+                            x21, y21, x22, y22=map(int, x2)
+                            detected2=image2[y21:y22, x21:x22]
+                            class_id2=results2[j][5]
+                            l1,l2,l3,l4=yolo.calculate_svd(detected1)
+
+                            
+
+                            if class_id1==class_id2:
+                                
+                                c1,c2,c3,c4=yolo.calculate_svd(detected2)
+                                
+                                for x in range(0,len(l1)):
+                                    
+                                    for y in range(0,len(c1)):
+                                        ms = yolo.get_score(l1[x],l2[x],l3[x],l4[x],c1[y],c2[y],c3[y],c4[y])
+                                        if ms < min_score:
+                                            min_score = ms
+                                            index=j
+                                            # print(min_score, index)
+
+
+                                        if min_score<svd_threshold:
+                                            ids1[i][0]=index
+                                            ids1[i][1]=-2
+
+
+ 
 
 
         return ids1, ids2
@@ -1312,7 +1448,7 @@ class BboxesPlotter:
 if __name__ == '__main__':
 
 
-    for x in range(1,9):
+    for x in range(1,15):
         image_folder = './test/test_case'+str(x)
         output_folder = './out/'
         
@@ -1370,7 +1506,7 @@ if __name__ == '__main__':
         # print('--------------')
         # print(len(unique_ids2))
 
-        ids1,ids2=yolo.compare(results1, unique_ids1, results2, unique_ids2)
+        ids1,ids2=yolo.compare(file1, results1, unique_ids1, file2, results2, unique_ids2)
 
         # print(results1.shape)
         # print(results2.shape)
