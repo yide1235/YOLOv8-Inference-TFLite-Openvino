@@ -452,6 +452,16 @@ class YOLOV8:
         # tracks =tracker.getTrackers()
     
         # return tracked_dets
+
+        #delete those small ones
+
+
+
+        # print(results)
+
+
+
+
         return results
     
     def postprocess(self, output_data):
@@ -711,8 +721,6 @@ class YOLOV8:
 
             if detected.shape[0] and detected.shape[1]:
 
-
-                
 
 
 
@@ -1448,7 +1456,7 @@ class BboxesPlotter:
 if __name__ == '__main__':
 
 
-    for x in range(1,15):
+    for x in range(1,2):
         image_folder = './test/test_case'+str(x)
         output_folder = './out/'
         
@@ -1514,17 +1522,13 @@ if __name__ == '__main__':
         # print(ids1)
         # print(ids2)
 
-
         plotter.plot_bboxes(file1, results1, save_name1, ids1)
         plotter.plot_bboxes(file2, results2, save_name2, ids2)
-
 
         print(f'Processing {file1, file2} - time: {time.time() - start3} s')
 
 
-
-
-
+#opencv 4.5 tflite2.6
 
 
 ###########################################video no tracking
