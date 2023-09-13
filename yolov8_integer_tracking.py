@@ -733,8 +733,6 @@ class YOLOV8:
                         r_var.append(np.var(r[i])*np.var(r[j]))
 
 
-                        
-
 
                 b=b_var/(width*height)
                 b=b.astype(int)
@@ -833,7 +831,7 @@ class YOLOV8:
                 g_detected=np.var(g_detected)
                 r_detected=np.var(r_detected)
 
-                unique_id=np.hstack((10*int(cls_id), b,g,r, confidence*100, x1/3,y1/3,x2/3,y2/3, b_detected/50, g_detected/50, r_detected/50))
+                unique_id=np.hstack((10*(cls_id), b,g,r, confidence*100, x1/3,y1/3,x2/3,y2/3, b_detected/50, g_detected/50, r_detected/50))
                 unique_ids.append(unique_id)
 
 
@@ -851,7 +849,6 @@ class YOLOV8:
                 # 10*svd_vector))
 
                 # unique_ids.append(unique_id)
-
 
 
 
@@ -961,7 +958,7 @@ class YOLOV8:
 
 
             # ids1=np.arange(0, len(unique_ids1))
-            ids1={i:[i,-1] for i in range(len(unique_ids1))}
+            ids1={i:[i,-1, unique_ids1[i][0]/10] for i in range(len(unique_ids1))}
 
             ids2 = {}
 
@@ -969,6 +966,7 @@ class YOLOV8:
 
             # Iterate through the vectors in list2
             for i, vec2 in enumerate(unique_ids2):
+
                 min_norm = float('inf')
                 matching_id2 = -1
 
@@ -985,24 +983,33 @@ class YOLOV8:
                         matching_id2-1
 
                 if cut_threshold> min_norm:
-                    ids2[i]=[matching_id2,min_norm]
+                    ids2[i]=[matching_id2,min_norm, vec2[0]/10]
                 else:
-                    ids2[i]=[-1,-1]
+                    ids2[i]=[-1,-1,  vec2[0]/10]
+
+
+            
 
             for key1,value1 in ids2.items():
 
                 for key2,value2 in ids2.items():
                     if key1!=key2 and value1[0]==value2[0] and value1[0]!=-1:
+                        if value1[2]==value2[2]:
+                            if value1[1]!=-1 and value2[1]!=-1:
+                                if value1[1]>value2[1]:
+                                        value2[0]=len(unique_ids1)+addition
+                                        addition+=1
+                                else:
+                                    value1[0]=len(unique_ids1)+addition
+                                    addition+=1
+                        else:
+                            if value1[1]!=-1 and value2[1]!=-1:
+                                #so two with different class is now the same number, add either one with more index
+                                value1[0]=len(unique_ids1)+addition+1
+                                addition+=1
 
-                            if value1[1]>value2[1]:
-                                value2[0]=len(unique_ids1)+addition
-                                addition+=1
-                            else:
-                                value1[0]=len(unique_ids1)+addition
-                                addition+=1
-                
         else:
-            ids2={i:[i,-1] for i in range(len(unique_ids2))}
+            ids2={i:[i,-1, unique_ids2[i][0]/10] for i in range(len(unique_ids2))}
 
             ids1 ={}
 
@@ -1010,15 +1017,19 @@ class YOLOV8:
 
 
             # Iterate through the vectors in list1
+            
+
             for i, vec1 in enumerate(unique_ids1):
                 min_norm1 = float('inf')
                 matching_id = -1
 
                 # Compare with vectors in list2
-                # print(vec1.shape)
+                
                 for j, vec2 in enumerate(unique_ids2):
 
+                    
                     if vec1[0]==vec2[0]:
+
                         norm = np.linalg.norm(vec2[1:]- vec1[1:])
 
 
@@ -1028,21 +1039,31 @@ class YOLOV8:
 
 
                 if cut_threshold> min_norm1:
-                    ids1[i]=[matching_id,min_norm1]
+                    ids1[i]=[matching_id,min_norm1,  vec2[0]/10]
                 else:
-                    ids1[i]=[-1,-1]
+                    ids1[i]=[-1,-1, vec2[0]/10]
+
+            # print(ids1, ids2,'---------------------')
 
             for key1,value1 in ids1.items():
 
                 for key2,value2 in ids1.items():
                     if key1!=key2 and value1[0]==value2[0]:
                             # print(ids1[key1][0],ids1[key2][0])
-                            if value1[1]>value2[1]:
-                                value2[0]=len(unique_ids1)+addition
+                        if value1[2]==value2[2]:
+                            if value1[1]!=-1 and value2[1]!=-1:
+                                if value1[1]>value2[1]:
+                                    value2[0]=len(unique_ids2)+addition
+                                    addition+=1
+                                else:
+                                    value1[0]=len(unique_ids2)+addition
+                                    addition+=1
+                        else:
+                            if value1[1]!=-1 and value2[1]!=-1:
+                                value1[0]=len(unique_ids2)+addition+1
                                 addition+=1
-                            else:
-                                value1[0]=len(unique_ids1)+addition
-                                addition+=1
+
+
         return ids1, ids2
 
 
@@ -1345,13 +1366,17 @@ if __name__ == '__main__':
 
         start3 = time.time()
 
+        # print(len(unique_ids1))
+        # print('--------------')
+        # print(len(unique_ids2))
+
         ids1,ids2=yolo.compare(results1, unique_ids1, results2, unique_ids2)
 
-        # print(results1)
-        # print(results2)
+        # print(results1.shape)
+        # print(results2.shape)
 
-        print(ids1)
-        print(ids2)
+        # print(ids1)
+        # print(ids2)
 
 
         plotter.plot_bboxes(file1, results1, save_name1, ids1)
