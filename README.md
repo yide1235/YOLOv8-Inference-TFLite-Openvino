@@ -36,7 +36,11 @@ Initial result using yolov8l quantized tflite pretrain model for stereo images(t
 
 
 ### C++run command figure out:
-g++ opencv_version.cpp -o output -I/usr/include/opencv4 -L/usr/lib -lopencv_core
 
 
-g++ -o test test.cpp -ltensorflow-lite
+(base) myd@myd-ROG-Strix-GA35DX-G35DX:~/Desktop/C++test$ g++ -I../tensorflow -ltensorflow_cc -c test.cpp `pkg-config --cflags --libs opencv4`
+(base) myd@myd-ROG-Strix-GA35DX-G35DX:~/Desktop/C++test$ sudo ./test.o
+sudo: ./test.o: command not found
+(base) myd@myd-ROG-Strix-GA35DX-G35DX:~/Desktop/C++test$ g++ -I../tensorflow -ltensorflow_cc -c test.o `pkg-config --cflags --libs 
+opencv4`
+g++: warning: test.o: linker input file unused because linking not done
