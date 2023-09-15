@@ -17,6 +17,7 @@ import cv2
 import numpy as np
 import os
 import uuid
+import random
 # define a matrix
 #A = array([[1, 2], [3, 4], [5, 6]])
 #print(A)
@@ -25,336 +26,7 @@ import uuid
 #print(U)
 #print(s)
 #print(VT)
-
-
-
-#from tqdm import tqdm
 #end of the environment for yolov8
-
-# import random
-
-
-# #environment for tracking
-# import os
-# import numpy as np
-# import matplotlib
-# matplotlib.use('Agg')
-# import matplotlib.pyplot as plt
-# import matplotlib.patches as patches
-# from skimage import io
-
-# import glob
-# import time
-# import argparse
-# from filterpy.kalman import KalmanFilter
-
-
-
-# # np.random.seed(0)
-
-# #end of tracking environment
-
-
-
-
-# #start of tracking code: 
-
-# np.random.seed(0)
-
-# def linear_assignment(cost_matrix):
-#     try:
-#         import lap #linear assignment problem solver
-#         _, x, y = lap.lapjv(cost_matrix, extend_cost = True)
-#         return np.array([[y[i],i] for i in x if i>=0])
-#     except ImportError:
-#         from scipy.optimize import linear_sum_assignment
-#         x,y = linear_sum_assignment(cost_matrix)
-#         return np.array(list(zip(x,y)))
-
-
-# """From SORT: Computes IOU between two boxes in the form [x1,y1,x2,y2]"""
-# def iou_batch(bb_test, bb_gt):
-    
-#     bb_gt = np.expand_dims(bb_gt, 0)
-#     bb_test = np.expand_dims(bb_test, 1)
-    
-#     xx1 = np.maximum(bb_test[...,0], bb_gt[..., 0])
-#     yy1 = np.maximum(bb_test[..., 1], bb_gt[..., 1])
-#     xx2 = np.minimum(bb_test[..., 2], bb_gt[..., 2])
-#     yy2 = np.minimum(bb_test[..., 3], bb_gt[..., 3])
-#     w = np.maximum(0., xx2 - xx1)
-#     h = np.maximum(0., yy2 - yy1)
-#     wh = w * h
-#     o = wh / ((bb_test[..., 2] - bb_test[..., 0]) * (bb_test[..., 3] - bb_test[..., 1])                                      
-#     + (bb_gt[..., 2] - bb_gt[..., 0]) * (bb_gt[..., 3] - bb_gt[..., 1]) - wh)
-#     return(o)
-
-
-# """Takes a bounding box in the form [x1,y1,x2,y2] and returns z in the form [x,y,s,r] where x,y is the center of the box and s is the scale/area and r is the aspect ratio"""
-# def convert_bbox_to_z(bbox):
-#     w = bbox[2] - bbox[0]
-#     h = bbox[3] - bbox[1]
-#     x = bbox[0] + w/2.
-#     y = bbox[1] + h/2.
-#     s = w * h    
-#     #scale is just area
-#     r = w / float(h)
-#     return np.array([x, y, s, r]).reshape((4, 1))
-
-
-# """Takes a bounding box in the centre form [x,y,s,r] and returns it in the form
-#     [x1,y1,x2,y2] where x1,y1 is the top left and x2,y2 is the bottom right"""
-# def convert_x_to_bbox(x, score=None):
-#     w = np.sqrt(x[2] * x[3])
-#     h = x[2] / w
-#     if(score==None):
-#         return np.array([x[0]-w/2.,x[1]-h/2.,x[0]+w/2.,x[1]+h/2.]).reshape((1,4))
-#     else:
-#         return np.array([x[0]-w/2.,x[1]-h/2.,x[0]+w/2.,x[1]+h/2.,score]).reshape((1,5))
-
-# """This class represents the internal state of individual tracked objects observed as bbox."""
-# class KalmanBoxTracker(object):
-    
-#     count = 0
-#     def __init__(self, bbox):
-#         """
-#         Initialize a tracker using initial bounding box
-        
-#         Parameter 'bbox' must have 'detected class' int number at the -1 position.
-#         """
-#         self.kf = KalmanFilter(dim_x=7, dim_z=4)
-#         self.kf.F = np.array([[1,0,0,0,1,0,0],[0,1,0,0,0,1,0],[0,0,1,0,0,0,1],[0,0,0,1,0,0,0],[0,0,0,0,1,0,0],[0,0,0,0,0,1,0],[0,0,0,0,0,0,1]])
-#         self.kf.H = np.array([[1,0,0,0,0,0,0],[0,1,0,0,0,0,0],[0,0,1,0,0,0,0],[0,0,0,1,0,0,0]])
-
-#         self.kf.R[2:,2:] *= 10. # R: Covariance matrix of measurement noise (set to high for noisy inputs -> more 'inertia' of boxes')
-#         self.kf.P[4:,4:] *= 1000. #give high uncertainty to the unobservable initial velocities
-#         self.kf.P *= 10.
-#         self.kf.Q[-1,-1] *= 0.5 # Q: Covariance matrix of process noise (set to high for erratically moving things)
-#         self.kf.Q[4:,4:] *= 0.5
-
-#         self.kf.x[:4] = convert_bbox_to_z(bbox) # STATE VECTOR
-#         self.time_since_update = 0
-#         self.id = KalmanBoxTracker.count
-#         KalmanBoxTracker.count += 1
-#         self.history = []
-#         self.hits = 0
-#         self.hit_streak = 0
-#         self.age = 0
-#         self.centroidarr = []
-#         CX = (bbox[0]+bbox[2])//2
-#         CY = (bbox[1]+bbox[3])//2
-#         self.centroidarr.append((CX,CY))
-        
-#         #keep yolov5 detected class information
-#         self.detclass = bbox[5]
-
-#         # If we want to store bbox
-#         self.bbox_history = [bbox]
-        
-#     def update(self, bbox):
-#         """
-#         Updates the state vector with observed bbox
-#         """
-#         self.time_since_update = 0
-#         self.history = []
-#         self.hits += 1
-#         self.hit_streak += 1
-#         self.kf.update(convert_bbox_to_z(bbox))
-#         self.detclass = bbox[5]
-#         CX = (bbox[0]+bbox[2])//2
-#         CY = (bbox[1]+bbox[3])//2
-#         self.centroidarr.append((CX,CY))
-#         self.bbox_history.append(bbox)
-    
-#     def predict(self):
-#         """
-#         Advances the state vector and returns the predicted bounding box estimate
-#         """
-#         if((self.kf.x[6]+self.kf.x[2])<=0):
-#             self.kf.x[6] *= 0.0
-#         self.kf.predict()
-#         self.age += 1
-#         if(self.time_since_update>0):
-#             self.hit_streak = 0
-#         self.time_since_update += 1
-#         self.history.append(convert_x_to_bbox(self.kf.x))
-#         # bbox=self.history[-1]
-#         # CX = (bbox[0]+bbox[2])/2
-#         # CY = (bbox[1]+bbox[3])/2
-#         # self.centroidarr.append((CX,CY))
-        
-#         return self.history[-1]
-    
-    
-#     def get_state(self):
-#         """
-#         Returns the current bounding box estimate
-#         # test
-#         arr1 = np.array([[1,2,3,4]])
-#         arr2 = np.array([0])
-#         arr3 = np.expand_dims(arr2, 0)
-#         np.concatenate((arr1,arr3), axis=1)
-#         """
-#         arr_detclass = np.expand_dims(np.array([self.detclass]), 0)
-        
-#         arr_u_dot = np.expand_dims(self.kf.x[4],0)
-#         arr_v_dot = np.expand_dims(self.kf.x[5],0)
-#         arr_s_dot = np.expand_dims(self.kf.x[6],0)
-        
-#         return np.concatenate((convert_x_to_bbox(self.kf.x), arr_detclass, arr_u_dot, arr_v_dot, arr_s_dot), axis=1)
-    
-# def associate_detections_to_trackers(detections, trackers, iou_threshold = 0.3):
-#     """
-#     Assigns detections to tracked object (both represented as bounding boxes)
-#     Returns 3 lists of 
-#     1. matches,
-#     2. unmatched_detections
-#     3. unmatched_trackers
-#     """
-#     if(len(trackers)==0):
-#         return np.empty((0,2),dtype=int), np.arange(len(detections)), np.empty((0,5),dtype=int)
-    
-#     iou_matrix = iou_batch(detections, trackers)
-    
-#     if min(iou_matrix.shape) > 0:
-#         a = (iou_matrix > iou_threshold).astype(np.int32)
-#         if a.sum(1).max() == 1 and a.sum(0).max() ==1:
-#             matched_indices = np.stack(np.where(a), axis=1)
-#         else:
-#             matched_indices = linear_assignment(-iou_matrix)
-#     else:
-#         matched_indices = np.empty(shape=(0,2))
-    
-#     unmatched_detections = []
-#     for d, det in enumerate(detections):
-#         if(d not in matched_indices[:,0]):
-#             unmatched_detections.append(d)
-    
-#     unmatched_trackers = []
-#     for t, trk in enumerate(trackers):
-#         if(t not in matched_indices[:,1]):
-#             unmatched_trackers.append(t)
-    
-#     #filter out matched with low IOU
-#     matches = []
-#     for m in matched_indices:
-#         if(iou_matrix[m[0], m[1]]<iou_threshold):
-#             unmatched_detections.append(m[0])
-#             unmatched_trackers.append(m[1])
-#         else:
-#             matches.append(m.reshape(1,2))
-    
-#     if(len(matches)==0):
-#         matches = np.empty((0,2), dtype=int)
-#     else:
-#         matches = np.concatenate(matches, axis=0)
-        
-#     return matches, np.array(unmatched_detections), np.array(unmatched_trackers)
-    
-
-# class Sort(object):
-#     def __init__(self, max_age=1, min_hits=3, iou_threshold=0.3):
-#         """
-#         Parameters for SORT
-#         """
-#         self.max_age = max_age
-#         self.min_hits = min_hits
-#         self.iou_threshold = iou_threshold
-#         self.trackers = []
-#         self.frame_count = 0
-#     def getTrackers(self,):
-#         return self.trackers
-        
-#     def update(self, dets= np.empty((0,6))):
-#         """
-#         Parameters:
-#         'dets' - a numpy array of detection in the format [[x1, y1, x2, y2, score], [x1,y1,x2,y2,score],...]
-        
-#         Ensure to call this method even frame has no detections. (pass np.empty((0,5)))
-        
-#         Returns a similar array, where the last column is object ID (replacing confidence score)
-        
-#         NOTE: The number of objects returned may differ from the number of objects provided.
-#         """
-#         self.frame_count += 1
-        
-#         # Get predicted locations from existing trackers
-#         trks = np.zeros((len(self.trackers), 6))
-#         to_del = []
-#         ret = []
-#         for t, trk in enumerate(trks):
-#             pos = self.trackers[t].predict()[0]
-#             trk[:] = [pos[0], pos[1], pos[2], pos[3], 0, 0]
-#             if np.any(np.isnan(pos)):
-#                 to_del.append(t)
-#         trks = np.ma.compress_rows(np.ma.masked_invalid(trks))
-#         for t in reversed(to_del):
-#             self.trackers.pop(t)
-#         matched, unmatched_dets, unmatched_trks = associate_detections_to_trackers(dets, trks, self.iou_threshold)
-        
-#         # Update matched trackers with assigned detections
-#         for m in matched:
-#             self.trackers[m[1]].update(dets[m[0], :])
-            
-#         # Create and initialize new trackers for unmatched detections
-#         for i in unmatched_dets:
-#             trk = KalmanBoxTracker(np.hstack((dets[i,:], np.array([0]))))
-#             #trk = KalmanBoxTracker(np.hstack(dets[i,:])
-#             self.trackers.append(trk)
-        
-#         i = len(self.trackers)
-#         for trk in reversed(self.trackers):
-#             d = trk.get_state()[0]
-#             if (trk.time_since_update < 1) and (trk.hit_streak >= self.min_hits or self.frame_count <= self.min_hits):
-#                 ret.append(np.concatenate((d, [trk.id+1])).reshape(1,-1)) #+1'd because MOT benchmark requires positive value
-#             i -= 1
-#             #remove dead tracklet
-#             if(trk.time_since_update >self.max_age):
-#                 self.trackers.pop(i)
-
-
-#         # print(dets)
-#         # print(ret)
-
-
-        
-#         if(len(ret) > 0):
-#             return np.concatenate(ret)
-#         return np.empty((0,6))
-
-# def parse_args():
-#     """Parse input arguments."""
-#     parser = argparse.ArgumentParser(description='SORT demo')
-#     parser.add_argument('--display', dest='display', help='Display online tracker output (slow) [False]',action='store_true')
-#     parser.add_argument("--seq_path", help="Path to detections.", type=str, default='data')
-#     parser.add_argument("--phase", help="Subdirectory in seq_path.", type=str, default='train')
-#     parser.add_argument("--max_age", 
-#                         help="Maximum number of frames to keep alive a track without associated detections.", 
-#                         type=int, default=1)
-#     parser.add_argument("--min_hits", 
-#                         help="Minimum number of associated detections before track is initialised.", 
-#                         type=int, default=3)
-#     parser.add_argument("--iou_threshold", help="Minimum IOU for match.", type=float, default=0.03)
-#     args = parser.parse_args()
-#     return args
-
-
-
-
-
-
-# tracker = None
-
-# def init_tracker():
-#     global tracker
-    
-#     sort_max_age = 5
-#     sort_min_hits = 2
-#     sort_iou_thresh = 0.1
-#     tracker =Sort(max_age=sort_max_age,min_hits=sort_min_hits,iou_threshold=sort_iou_thresh)
-
-
-# #end of tracking code
 
 
 
@@ -443,9 +115,14 @@ class YOLOV8:
 
         output_data = interpreter.get_tensor(self.output_details[0]['index'])
 
-
+        # print(output_data.shape)
+        # flat_output=output_data.flatten()
+        # random_integer = random.randint(1, 100)
+        # print(random_integer)
+        # np.savetxt(f'./random_tensor_{random_integer}.txt', flat_output, delimiter=' ')
         
         results = self.postprocess(output_data)
+
 
         #wont use tracking
         # tracked_dets = tracker.update(results)
@@ -456,17 +133,78 @@ class YOLOV8:
         #delete those small ones
 
 
+        #2.97752563e+02 1.73334991e+02 3.35306946e+02 2.75268311e+02
+        
 
+        size_threshold=3872
         # print(results)
+        final_result=[]
+        test_image=cv.imread(image)
 
+        for i in results:
+            x=i[:4]
+            x1,y1,x2,y2=map(int, x)
+            detected=test_image[y1:y2, x1:x2]
+            if (detected.shape[0]*detected.shape[1])>size_threshold:
+                final_result.append(i)
 
+        final_result=np.array(final_result)
 
-
-        return results
+        return final_result
     
+
+
+
     def postprocess(self, output_data):
+
+
+
+
+        # #if we have a 84,8400
+        # bbox2=[] #it should be 4*8400 
+        # score2=[] #should be the rest
+        # flat_output=output_data.flatten()
+
+        # #traverse 80*8400
+        # base=4*8400
+        # #score2
+        # m=0
+
+        # while m<8400:
+            
+        #     temp2=[]
+        #     i=0
+        #     while i<4:
+        #         temp2.append(flat_output[i*8400+m])
+        #         i+=1
+        #     temp2=np.array(temp2)
+        #     bbox2.append(temp2)
+
+        #     temp=[]
+        #     n=0
+        #     while n<80:
+        #         temp.append(flat_output[n*8400+m+base])
+        #         n+=1
+        #     temp=np.array(temp)
+        #     score2.append(temp)
+        #     m+=1
+        # bbox2=np.array(bbox2)
+        # score2=np.array(score2)
+        # print(bbox2.shape)
+        # print(score2.shape)
+
+
+
+        #correct ones
         output = np.squeeze(output_data).T
         boxes, probs = output[:, :4], output[:, 4:]
+
+
+        # print(bbox2==boxes)
+        # print(score2==probs)
+        # print(bbox2.shape==boxes.shape)
+        # print(score2.shape==probs.shape)
+
 
         # select high confident bboxes
         scores = np.amax(probs, axis=1)
@@ -501,10 +239,20 @@ class YOLOV8:
 
         
         results=np.array(results)
+
+        # print(results)
        
 
         return results
     
+
+
+
+
+
+
+
+
     def letterbox(self, img):
         """Resize image and pad to square"""
         shape = img.shape[:2]  # current shape [height, width]
@@ -863,114 +611,6 @@ class YOLOV8:
 
 
 
-
-                # #add svd, didnot work:
-                # svd_vector=yolo.calculate_svd(detected)
-
-                # svd_vector=svd_vector.reshape(svd_vector.shape[1])
-
-                # unique_id=np.hstack((10*int(cls_id), b,g,r, 
-                # confidence*100, x1/3,y1/3,x2/3,y2/3, 
-                # b_detected/50, g_detected/50, r_detected/50,
-                # 10*svd_vector))
-
-                # unique_ids.append(unique_id)
-
-
-
-
-                # split2=1000
-
-
-                # b_mean=[]
-                # g_mean=[]
-                # r_mean=[]
-                # for i in range(split):
-                #     # block = detected[i * block_width: (i + 1) * block_width, 0: (j + 1) * height]
-                #     block2=detected[0: width, i * block_height: (i + 1) * block_height]
-                #     blocks.append(block)
-                #     blocks.append(block2)
-
-                # for i in blocks:
-                #     bmean,gmean,rmean=cv.split(i)
-                #     b_mean.append(bmean)
-                #     g_mean.append(gmean)
-                #     r_mean.append(rmean)
-
-                # b_mean2=[]
-                # g_mean2=[]
-                # r_mean2=[]
-                # for i in b_mean:
-                #     b_mean2.append(np.var(i))
-                # for i in g_mean:
-                #     g_mean2.append(np.var(i))
-
-                # for i in r_mean:
-                #     r_mean2.append(np.var(i))
-
-                # b_mean2=np.array(b_mean2)
-                # g_mean2=np.array(g_mean2)
-                # r_mean2=np.array(r_mean2)
-
-                # b_mean2=np.sort(b_mean2)
-                # g_mean2=np.sort(g_mean2)
-                # r_mean2=np.sort(r_mean2)
-
-
-
-
-                # b_mean2_max=np.max(b_mean2)
-
-                # b_mean2_min=np.min(b_mean2)
- 
-                # binterval_mean=(b_mean2_max-b_mean2_min)/(len(b_mean2)-1)
-
-
-                # for i in range(len(b_mean2)):
-                #     if binterval_mean != 0:
-                #         b_mean2[i] = (b_mean2[i] - b_mean2_min) / binterval_mean + 1
-                #     else:
-                #         # Handle the case where binterval is zero (or any other invalid value)
-                #         # You can assign a default value or raise an exception depending on your logic.
-                #         b_mean2[i] = 0 
-
-
-                # g_mean2_max=np.max(g_mean2)
-
-                # g_mean2_min=np.min(g_mean2)
- 
-                # ginterval_mean=(g_mean2_max-g_mean2_min)/(len(g_mean2)-1)
-
-
-                # for i in range(len(g_mean2)):
-                #     if ginterval_mean != 0:
-                #         g_mean2[i] = (g_mean2[i] - g_mean2_min) / ginterval_mean + 1
-                #     else:
-                #         # Handle the case where ginterval is zero (or any other invalid value)
-                #         # You can assign a default value or raise an exception depending on your logic.
-                #         g_mean2[i] = 0 
-
-
-
-                # r_mean2_max=np.max(r_mean2)
-
-                # r_mean2_min=np.min(r_mean2)
- 
-                # rinterval_mean=(r_mean2_max-r_mean2_min)/(len(r_mean2)-1)
-
-
-                # for i in range(len(r_mean2)):
-                #     if rinterval_mean != 0:
-                #         r_mean2[i] = (r_mean2[i] - r_mean2_min) / rinterval_mean + 1
-                #     else:
-                #         # Handle the case where binterval is zero (or any other invalid value)
-                #         # You can assign a default value or raise an exception depending on your logic.
-                #         r_mean2[i] = 0 
-
-
-                # unique_id=np.hstack((10*int(cls_id), b,g,r,b_mean2,g_mean2,r_mean2, confidence*100, x1/3,y1/3,x2/3,y2/3))
-                # unique_ids.append(unique_id)
-
  
 
         return unique_ids
@@ -1098,10 +738,6 @@ class YOLOV8:
                                         if min_score<svd_threshold:
                                             ids2[i][0]=index
                                             ids2[i][1]=-2
-            # print('11111111111')
-
-            # print(ids1)
-            # print(ids2)
 
 
 
@@ -1213,166 +849,6 @@ class YOLOV8:
 
 
 
-    # ssim not working because the definition of covariance is positional encoding 
-    # def ssim(self, image1, results1,bit_depth1, image2, results2, bit_depth2):
-
-    #     detected1=[]
-    #     detected2=[]
-
-    #     for i in range(len(results1)):
-    #         x=results1[i][:4]
-    #         x1,y1,x2,y2=map(int, x)
-    #         detected1.append(image1[y1:y2, x1:x2])
-    #         # mean, stddev = cv.meanStdDev(image1[y1:y2, x1:x2])
-    #         # print(mean, stddev)
-    #         # cv.imshow('111',image1[y1:y2, x1:x2])
-    #         # cv.waitKey(0)
-
-    #     print('second')
-
-    #     for i in range(len(results2)):
-    #         y=results2[i][:4]
-    #         x_1,y_1,x_2,y_2=map(int, y)
-    #         detected2.append(image2[y_1:y_2, x_1:x_2])
-    #         # mean, stddev = cv.meanStdDev(image2[y1:y2, x1:x2])
-    #         # print(mean, stddev)
-    #         # cv.imshow('111',image2[y_1:y_2, x_1:x_2])
-    #         # cv.waitKey(0)
-
-
-
-    #     if len(detected1)>len(detected2):
-            
-    #         print('111111111111')
-
-    #         ids1={i:[i,-1] for i in range(len(detected1))}
-
-    #         ids2={}
-
-    #         for i, detection_i in enumerate(detected2):
-    #             max_ssim=0
-    #             ssim=0
-    #             matching_id2=-1
-    #             for j, detection_j in enumerate(detected1):
-    #                 if results1[j][5]==results2[i][5]:
-    #                     ssim=self.ssim_helper1(detection_i, bit_depth2, detection_j, bit_depth1)
-    #                     if ssim > max_ssim:
-                            
-    #                         max_ssim=ssim
-    #                         matching_id2=j
-    #                         # print(j)
-    #                         # print('aaa',matching_id2, max_ssim)
-                
-    #             # print('11111')
-
-    #             if i in ids2:
-    #                 if ids2[i][1]<max_ssim:
-    #                     ids2[i]=[matching_id2, max_ssim]
-    #             else:
-    #                 ids2[i]=[matching_id2,max_ssim]
-
-
-
-    #     else:
-
-
-    #         ids2={i:[i,-1] for i in range(len(detected2))}
-
-    #         ids1={}
-
-    #         for i, detection_i in enumerate(detected1):
-    #             max_ssim=0
-    #             matching_id=-1
-
-    #             for j, detection_j in enumerate(detected2):
-
-    #                 if results1[i][5]==results2[j][5]:
-
-    #                     ssim=self.ssim_helper1(detection_i, bit_depth1, detection_j, bit_depth2)
-
-    #                     if ssim > max_ssim:
-    #                         max_ssim=ssim
-
-    #                         matching_id=j
-
-
-    #             if i in ids1:
-
-    #                 if ids1[i][1]<max_ssim:
-
-    #                     ids1[i]=[matching_id, max_ssim]
-    #             else:
-    #                 ids1[i]=[matching_id,max_ssim]
-
-    #     return ids1, ids2
-
-
-        
-    # def ssim_helper1(self, detected1, bit_depth1, detected2, bit_depth2):
-    #     b1, g1, r1 = cv.split(detected1)
-    #     b2, g2, r2 = cv.split(detected2)
-
-    #     b=self.ssim_helper2(b1, bit_depth1, b2, bit_depth2)
-    #     g=self.ssim_helper2(g1, bit_depth1, g2, bit_depth2)
-    #     r=self.ssim_helper2(r1, bit_depth1, r2, bit_depth2)
-
-    #     return np.linalg.norm(np.array([b,g,r]))
-        
-        
-
-    # def ssim_helper2(self, x,bit_depth1, y, bit_depth2):
-
-
-    #     stddev_x=np.std(x)
-    #     stddev_y=np.std(y)
-
-    #     mean_x = np.mean(x, axis=(0, 1))
-    #     mean_y = np.mean(y, axis=(0, 1))
-
-    #     # print(stddev_x, stddev_y)
-    #     # print(mean_x, mean_y)
-
-    #     variance_x = np.var(x, axis=(0, 1))
-    #     variance_y = np.var(y, axis=(0, 1))
-
-    #     # covariance_matrix = np.cov(np.vstack((x.reshape(-1, 3).T, y.reshape(-1, 3).T)))
-
-    #     # covariance_xy = covariance_matrix[:3, 3:]
-    #     covariance_xy=(variance_x * variance_y) - (mean_x * mean_y)
-
-
-    #     # print("Pixel Sample Mean of x:", mean_x)
-    #     # print("Pixel Sample Mean of y:", mean_y)
-    #     # print("Variance of x:", variance_x)
-    #     # print("Variance of y:", variance_y)
-    #     # print("Covariance between x and y:")
-    #     # print(covariance_xy)
-
-    #     L1=2*bit_depth1 -1
-    #     L2=2*bit_depth2-1
-
-    #     k1=0.01
-    #     k2=0.03
-
-    #     c1=(k1*L1)*(k1*L1)
-    #     c2=(k2*L2)*(k2*L2)
-
-    #     c3=c2/2
-
-    #     l_xy=(2*mean_x*mean_y+c1)/(np.square(mean_x)+np.square(mean_y)+c1)
-
-    #     c_xy=(2*variance_x*variance_y+c1)/(np.square(mean_x)+np.square(mean_y)+c2)
-
-    #     s_xy=(covariance_xy+c3)/(stddev_x*stddev_y+c3)
-
-
-    #     return l_xy*c_xy*s_xy
-
-
-
-
-
-
 class BboxesPlotter:
     def __init__(self) -> None:
         self.colors = self.Colors()
@@ -1422,9 +898,7 @@ class BboxesPlotter:
 
             tracking_id=id[i][0]
 
-            # label = f'{tracking_id} {confidence:.2f}'
-            # label = f'{tracking_id} {confidence:.2f}'
-            label =f'{tracking_id}'
+            label =f'{tracking_id} { confidence:.2f}'
             color = self.colors(cls_id, True)
 
             im0 = self.plot_one_box(bbox, im0, color, label)
@@ -1456,7 +930,7 @@ class BboxesPlotter:
 if __name__ == '__main__':
 
 
-    for x in range(1,2):
+    for x in range(1,17):
         image_folder = './test/test_case'+str(x)
         output_folder = './out/'
         
@@ -1489,8 +963,10 @@ if __name__ == '__main__':
         print(f'Processing {file1} - time: {time.time() - start1} s')
 
 
+
+
         file2=sorted_image_files[1]
-        #should iterative twice
+
 
         start2 = time.time()
         
@@ -1510,17 +986,24 @@ if __name__ == '__main__':
 
         start3 = time.time()
 
-        # print(len(unique_ids1))
-        # print('--------------')
-        # print(len(unique_ids2))
+        # print(results1)
+        # print(results2)
+	
 
         ids1,ids2=yolo.compare(file1, results1, unique_ids1, file2, results2, unique_ids2)
 
-        # print(results1.shape)
-        # print(results2.shape)
 
-        # print(ids1)
-        # print(ids2)
+        ## #get the threshold 3876 from image capture_1694334583895.png
+        ## print(results1[0])
+        ## m=results1[0][:4]
+        ## x1, y1, x2, y2=map(int, m)
+        ## image1=cv.imread(file1)
+        ## detected=image1[y1:y2, x1:x2]
+        ## threshold2=(y2-y1)*(x2-x1)
+        ## print(threshold2)
+        ## cv.imwrite("./1111.jpg",detected)
+
+
 
         plotter.plot_bboxes(file1, results1, save_name1, ids1)
         plotter.plot_bboxes(file2, results2, save_name2, ids2)
@@ -1530,269 +1013,3 @@ if __name__ == '__main__':
 
 #opencv 4.5 tflite2.6
 
-
-###########################################video no tracking
-# if __name__ == '__main__':
-
-
-
-#     if tf.test.is_gpu_available():
-#         print("GPU is available.")
-#     else:
-#         print("GPU is not available.")
-
-
-#     video_path = '/home/myd/Desktop/30min.mp4'  # Change this to your video file path
-#     output_path = '/home/myd/Desktop/out/video.mp4'  # Change this to your desired output video path
-#     fps = 1.0  # Process one frame per second
-
-#     yolo = YOLOV8()
-#     plotter = BboxesPlotter()
-
-#     cap = cv.VideoCapture(video_path)
-
-#     if not cap.isOpened():
-#         print("Error: Could not open video file.")
-#         exit()
-
-#     frame_rate = cap.get(cv.CAP_PROP_FPS)
-#     h, w = int(cap.get(cv.CAP_PROP_FRAME_HEIGHT)), int(cap.get(cv.CAP_PROP_FRAME_WIDTH))
-#     fourcc = cv.VideoWriter_fourcc(*'XVID')
-#     video_writer = cv.VideoWriter(output_path, fourcc, frame_rate, (w, h))
-
-#     while True:
-#         ret, frame = cap.read()
-
-#         if not ret:
-#             break
-
-#         results = yolo.detect(frame)
-
-#         # Annotate the frame
-  
-#         annotated_frame=plotter.plot_bboxes(frame, results)
-#         #cv.imwrite('/home/myd/Desktop/out/eg.jpg',annotated_frame)
-
-#         # Save the annotated frame to the output video
- 
-#         video_writer.write(annotated_frame)
-
-#     cap.release()
-#     video_writer.release()
-
-#     print("Processing completed. Annotated video saved at:", output_path)
-    
-    
-
-
-
-
-
-
-
-
- 
-
-# ###########################################just image inference
-
-# # if __name__ == '__main__':
-# #     for scene in ['bus', 'school', 'hospital', 'dwight']:
-# #         files = glob.glob(f'src/{scene}/*.jpg')[:5]
-
-# #         yolo = YOLOV8()
-# #         plotter = BboxesPlotter()
-
-# #         for file in files:
-            
-# #             start = time.time()
-# #             results = yolo.detect(file)
-# #             print(f'time: {time.time() - start} s')
-
-# #             save_name = f'out/{model_name}/' + f'{scene}_' + file.split('/')[-1]
-# #             dir_name = os.path.dirname(save_name)
-# #             if not os.path.exists(dir_name):
-# #                 os.makedirs(dir_name)
-            
-# #             plotter.plot_bboxes(file, results, save_name)
-
-# if __name__ == '__main__':
-#     image_folder = '/home/myd/Desktop/multi'
-#     output_folder = './out/'
-
-#     yolo = YOLOV8()
-#     plotter = BboxesPlotter()
-
-#     image_files = glob.glob(f'{image_folder}/*.png')
-
-#     for file in image_files:
-#         start = time.time()
-#         results = yolo.detect(file)
-
-#         print(f'Processing {file} - time: {time.time() - start} s')
-
-#         save_name = output_folder + file.split('/')[-1]
-
-
-
-
-
-
-
-
-
-
-
-###################ssim one, not working right now
-
-# if __name__ == '__main__':
-#     image_folder = '/home/myd/Desktop/baseball'
-#     output_folder = './out/'
-    
-
-#     # init_tracker()
-
-#     yolo = YOLOV8()
-#     plotter = BboxesPlotter()
-
-#     image_files = glob.glob(f'{image_folder}/*.jpg')
-#     sorted_image_files = sorted(image_files)
-
-    
-    
-#     file1=sorted_image_files[0]
-#     #should iterative twice
-
-#     start1 = time.time()
-    
-    
-
-#     results1 = yolo.detect(file1)
-
-    
-
-#     save_name1 = output_folder + file1.split('/')[-1]
-#     # plotter.plot_bboxes(file, results, save_name)
-
-#     print(f'Processing {file1} - time: {time.time() - start1} s')
-
-
-
-
-
-#     file2=sorted_image_files[1]
-#     #should iterative twice
-
-#     start2 = time.time()
-    
-    
-
-#     results2 = yolo.detect(file2)
-
-
-    
-
-#     # print(results2)
-#     # print(unique_ids2)
-
-#     save_name2 = output_folder + file2.split('/')[-1]
-#     # plotter.plot_bboxes(file, results, save_name)
-
-#     print(f'Processing {file2} - time: {time.time() - start2} s')
-
-    
-#     #now i have image1, iamge2, resutls1, results2
-    
-
-
-
-
-#     # start3 = time.time()
-
-
-#     # if len(unique_ids1)> len(unique_ids2):
-
-#     #     # ids1=np.arange(0, len(unique_ids1))
-#     #     ids1={i:[i,-1] for i in range(len(unique_ids1))}
-
-#     #     ids2 = {}
-
-#     #     # Iterate through the vectors in list2
-#     #     for i, vec2 in enumerate(unique_ids2):
-#     #         min_norm = float('inf')
-#     #         matching_id2 = -1
-
-#     #         # Compare with vectors in list1
-#     #         for j, vec1 in enumerate(unique_ids1):
-#     #             if vec1[0]==vec2[0]:
-#     #                 norm = np.linalg.norm(vec1[1:]- vec2[1:])
-#     #                 if norm < min_norm:
-#     #                     min_norm = norm
-#     #                     matching_id2 = j
-
-#     #         # Assign the same unique ID for the closest vector in list1
-#     #         if i in ids2:
-#     #             if ids2[i][1]>min_norm:
-#     #                 ids2[i]=[matching_id2,min_norm]
-                
-#     #         else:
-#     #             ids2[i]=[matching_id2,min_norm]
-
-            
-#     # else:
-#     #     ids2={i:[i,-1] for i in range(len(unique_ids2))}
-
-#     #     ids1 ={}
-
-
-#     #     # Iterate through the vectors in list1
-#     #     for i, vec1 in enumerate(unique_ids1):
-#     #         min_norm = float('inf')
-#     #         matching_id = -1
-
-#     #         # Compare with vectors in list2
-#     #         # print(vec1.shape)
-#     #         for j, vec2 in enumerate(unique_ids2):
-
-#     #             if vec1[0]==vec2[0]:
-#     #                 norm = np.linalg.norm(vec1[1:]- vec2[1:])
-#     #                 if norm < min_norm:
-#     #                     min_norm = norm
-#     #                     matching_id = j
-
-#     #         # Assign the same unique ID for the closest vector in list2
-#     #         if i in ids1:
-#     #             if ids1[i][1]>min_norm:
-#     #                 ids1[i]=[matching_id,min_norm]
-#     #         else:
-                
-#     #             ids1[i]=[matching_id,min_norm]
-        
-#     # # print(ids1)
-#     # # print(ids2)
-
-
-
-
-
-#     im1=cv.imread(file1)
-#     im2=cv.imread(file2)
-#     # print(im1.shape)
-#     # print(im2.shape)
-#     # print(results1)
-#     # print(results2)
-
-#     bit_depth1=im1.dtype.itemsize * 8
-#     bit_depth2=im2.dtype.itemsize * 8
-
-#     assert bit_depth1 == bit_depth2, "Error: Bit depths of the two images are not equal."
-
-#     # print(f'Processing {file1, file2} - time: {time.time() - start3} s')
-#     ids1, ids2= yolo.ssim(im1, results1,bit_depth1, im2, results2, bit_depth2)
-
-#     print(ids1)
-
-#     print(ids2)
-
-
-#     plotter.plot_bboxes(file1, results1, save_name1, ids1)
-#     plotter.plot_bboxes(file2, results2, save_name2, ids2)
