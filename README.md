@@ -32,3 +32,9 @@ Initial result using yolov8l quantized tflite pretrain model for stereo images(t
 - https://github.com/abewley/sort
 - https://github.com/ultralytics/ultralytics
 - https://github.com/RizwanMunawar/yolov8-object-tracking.git
+
+
+
+### C++run command figure out:
+g++ opencv_version.cpp -o output -I/usr/include/opencv4 -L/usr/lib -lopencv_core
+g++ -o test test.cpp -ltensorflow-lite
