@@ -37,7 +37,7 @@ Initial result using yolov8l quantized tflite pretrain model for stereo images(t
 
 ### C++run command figure out:
 
-
+//my part dont need tflite
 $ g++ -I../tensorflow -ltensorflow_cc -c test.cpp `pkg-config --cflags --libs opencv4`
 
 
@@ -45,3 +45,11 @@ $ g++ -I../tensorflow -ltensorflow_cc -c test.o `pkg-config --cflags --libs
 opencv4`
 
 g++: warning: test.o: linker input file unused because linking not done
+
+
+//will only use opencv
+
+$ g++ -o yolov8_integer_tracking yolov8_integer_tracking.cpp `pkg-
+config --cflags --libs opencv4`
+
+$ ./yolov8_integer_tracking
