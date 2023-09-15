@@ -32,3 +32,16 @@ Initial result using yolov8l quantized tflite pretrain model for stereo images(t
 - https://github.com/abewley/sort
 - https://github.com/ultralytics/ultralytics
 - https://github.com/RizwanMunawar/yolov8-object-tracking.git
+
+
+
+### C++run command figure out:
+
+
+$ g++ -I../tensorflow -ltensorflow_cc -c test.cpp `pkg-config --cflags --libs opencv4`
+
+
+$ g++ -I../tensorflow -ltensorflow_cc -c test.o `pkg-config --cflags --libs 
+opencv4`
+
+g++: warning: test.o: linker input file unused because linking not done
