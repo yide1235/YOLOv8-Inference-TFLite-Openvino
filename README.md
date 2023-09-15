@@ -43,4 +43,5 @@ $ g++ -I../tensorflow -ltensorflow_cc -c test.cpp `pkg-config --cflags --libs op
 
 $ g++ -I../tensorflow -ltensorflow_cc -c test.o `pkg-config --cflags --libs 
 opencv4`
+
 g++: warning: test.o: linker input file unused because linking not done
