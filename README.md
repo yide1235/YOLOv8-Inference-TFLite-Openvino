@@ -49,7 +49,3 @@ g++: warning: test.o: linker input file unused because linking not done
 
 //will only use opencv
 
-$ g++ -o yolov8_integer_tracking yolov8_integer_tracking.cpp `pkg-
-config --cflags --libs opencv4`
-
-$ ./yolov8_integer_tracking
