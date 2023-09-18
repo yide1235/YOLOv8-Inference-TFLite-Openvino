@@ -47,5 +47,5 @@ opencv4`
 g++: warning: test.o: linker input file unused because linking not done
 
 
-//will only use opencv
+//will only use opencv for the tracking part
 
