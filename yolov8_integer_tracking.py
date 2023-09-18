@@ -246,7 +246,54 @@ class YOLOV8:
         return results
     
 
+    # #just for testing purposes, because in c++ we only traverse the image as array
 
+    # def postprocess2(self, output_data):
+
+
+
+
+    #     #if we have a 84,8400
+    #     # bbox2=[] #it should be 4*8400 
+    #     # score2=[] #should be the rest
+    #     flat_output=output_data.flatten()
+
+
+    #     confidence=[]
+    #     index=[]
+    #     bbox2=[]
+    #     #traverse 80*8400
+    #     base=4*8400
+    #     #score2
+    #     m=0
+
+    #     while m<8400:
+
+    #         temp=[]
+    #         n=0
+    #         while n<80:
+    #             if flat_output[n*8400+m+base]>0.25:
+    #                 index.append(n)
+    #                 confidence.append(flat_output[n*8400+m+base])
+    #             # temp.append(flat_output[n*8400+m+base])
+                    
+    #                 temp2=[]
+    #                 i=0
+    #                 while i<4:
+    #                     temp2.append(flat_output[i*8400+m])
+    #                     i+=1
+
+    #                 bbox2.append(self.xywh2xyxy_scale(np.array([temp2])))
+    #             n+=1
+    #         m+=1
+
+    #     print(confidence)
+    #     print(index)
+    #     print(bbox2)
+
+
+
+    #     return None
 
 
 
