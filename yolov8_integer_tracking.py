@@ -462,7 +462,7 @@ class YOLOV8:
             width=np.abs(y1-y2)
             height=np.abs(x1-x2)
 
-                
+            # print(detected.shape)
 
             #now using 9
 
@@ -482,6 +482,9 @@ class YOLOV8:
                 for i in range(split):
                     for j in range(split):
                         block = detected[i * block_width: (i + 1) * block_width, j * block_height: (j + 1) * block_height]
+                        # cv.imshow("block", block)
+                        # cv.waitKey(0)
+                        # cv.destroyAllWindows()
                         blocks.append(block)
 
                 b=[]
@@ -518,6 +521,12 @@ class YOLOV8:
                 r=r_var/(width*height)
                 r=r.astype(int)
                 r=np.sort(r)
+
+                # print(b)
+                # print(g)
+                # print(r)
+                # print('-----------')
+
 
 
             #     #rank
@@ -603,10 +612,14 @@ class YOLOV8:
                 b_detected=np.var(b_detected)
                 g_detected=np.var(g_detected)
                 r_detected=np.var(r_detected)
+                # print(b_detected.shape,'-------------')
+                # print(b_detected, g_detected, r_detected)
 
                 # unique_id=np.hstack((10*(cls_id), b,g,r, confidence*100, x1/4,y1/4,x2/4,y2/4, b_detected/45, g_detected/45, r_detected/45))
                 unique_id=np.hstack((10*(cls_id), b,g,r, confidence*100, x1/3,y1/3,x2/3,y2/3, b_detected/45, g_detected/45, r_detected/45))
                 
+                # print(unique_id)
+
                 unique_ids.append(unique_id)
 
 
@@ -841,7 +854,7 @@ class YOLOV8:
                                             ids1[i][1]=-2
 
 
- 
+        print(ids1, ids2)
 
 
         return ids1, ids2
@@ -930,7 +943,7 @@ class BboxesPlotter:
 if __name__ == '__main__':
 
 
-    for x in range(1,17):
+    for x in range(1,2):
         image_folder = './test/test_case'+str(x)
         output_folder = './out/'
         
@@ -970,6 +983,7 @@ if __name__ == '__main__':
 
         start2 = time.time()
         
+
         
 
         results2 = yolo.detect(file2)
@@ -987,7 +1001,12 @@ if __name__ == '__main__':
         start3 = time.time()
 
         # print(results1)
+        # print('------')
         # print(results2)
+
+        # print(unique_ids1)
+        # print('-------------')
+        # print(unique_ids2)
 	
 
         ids1,ids2=yolo.compare(file1, results1, unique_ids1, file2, results2, unique_ids2)
