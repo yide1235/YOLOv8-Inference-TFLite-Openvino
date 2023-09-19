@@ -508,13 +508,277 @@ std::vector<std::map<int, std::vector<float>>> compare(
         return std::vector<std::map<int, std::vector<float>>>();
     }
 
-    int svd_threshold = 20;
-    int cut_threshold = 100;
+    int svd_threshold = 8;
+    int cut_threshold = 40;
 
     std::map<int, std::vector<float>> ids1;
     std::map<int, std::vector<float>> ids2;
     
     if (unique_ids1.size() > unique_ids2.size()) {
+        ids1 = generateIds(unique_ids1);
+
+        int addition = 1;
+
+        // // Iterate through the map and print the key-value pairs
+        // for (const auto& entry : ids2) {
+        //     int key = entry.first;
+        //     const std::vector<float>& values = entry.second;
+
+        //     std::cout << "Key: " << key << ", Values: ";
+            
+        //     for (float value : values) {
+        //         std::cout << value << " ";
+        //     }
+
+        //     std::cout << std::endl;
+        // }        
+
+        
+        // Iterate through the vectors in unique_ids1
+        for (size_t i = 0; i < unique_ids2.size(); ++i) {
+            float min_norm2 = std::numeric_limits<float>::infinity();
+            int matching_id2 = -1;
+
+            // Compare with vectors in unique_ids2
+            for (size_t j = 0; j < unique_ids1.size(); ++j) {
+                if (unique_ids2[i][0] == unique_ids1[j][0]) {
+                    float norm2 = 0.0;
+                    for (size_t k = 1; k < unique_ids2[i].size(); ++k) {
+                        norm2 += std::pow(unique_ids1[j][k] - unique_ids2[i][k], 2);
+                    }
+                    norm2 = std::sqrt(norm2);
+
+                    if (norm2 < min_norm2) {
+                        min_norm2 = norm2;
+                        matching_id2 = static_cast<int>(j);
+                    }
+                }
+            }
+
+            if (cut_threshold > min_norm2) {
+                ids2[i] = {matching_id2, min_norm2, unique_ids2[i][0] / 10};
+                ids1[matching_id2][1] = 1.0;
+            } else {
+                ids2[i] = {-1, -1, unique_ids1[i][0] / 10};
+            }
+        }
+
+
+        // ids1[0][0]=3;
+
+
+
+        // // Iterate through the map and print the key-value pairs
+        // for (const auto& entry : ids1) {
+        //     int key = entry.first;
+        //     const std::vector<float>& values = entry.second;
+
+        //     std::cout << "Key: " << key << ", Values: ";
+            
+        //     for (float value : values) {
+        //         std::cout << value << " ";
+        //     }
+
+        //     std::cout << std::endl;
+        // }    
+
+        // // Iterate through the map and print the key-value pairs
+        // for (const auto& entry : ids2) {
+        //     int key = entry.first;
+        //     const std::vector<float>& values = entry.second;
+
+        //     std::cout << "Key: " << key << ", Values: ";
+            
+        //     for (float value : values) {
+        //         std::cout << value << " ";
+        //     }
+
+        //     std::cout << std::endl;
+        // }    
+
+        
+        
+
+
+        for (auto it1 = ids2.begin(); it1 != ids2.end(); ++it1) {
+            for (auto it2 = ids2.begin(); it2 != ids2.end(); ++it2) {
+                int key1 = it1->first;
+                int key2 = it2->first;
+                std::vector<float>& value1 = it1->second;
+                std::vector<float>& value2 = it2->second;
+
+                if (key1 != key2 && value1[0] == value2[0]) {
+                    if (value1[2] == value2[2]) {
+                        if (value1[1] != -1 && value2[1] != -1) {
+                            if (value1[1] > value2[1]) {
+                                value2[0] = ids2.size() + addition;
+                                addition++;
+                            } else {
+                                value1[0] = ids2.size() + addition;
+                                addition++;
+                            }
+                        }
+                    } else {
+                        if (value1[1] != -1 && value2[1] != -1) {
+                            value1[0] = ids2.size() + addition + 1;
+                            addition++;
+                        }
+                    }
+                }
+            }
+        }
+
+    
+
+
+        // // Iterate through the map and print the key-value pairs
+        // for (const auto& entry : ids1) {
+        //     int key = entry.first;
+        //     const std::vector<float>& values = entry.second;
+
+        //     std::cout << "Key: " << key << ", Values: ";
+            
+        //     for (float value : values) {
+        //         std::cout << value << " ";
+        //     }
+
+        //     std::cout << std::endl;
+        // }    
+
+        // // Iterate through the map and print the key-value pairs
+        // for (const auto& entry : ids2) {
+        //     int key = entry.first;
+        //     const std::vector<float>& values = entry.second;
+
+        //     std::cout << "Key: " << key << ", Values: ";
+            
+        //     for (float value : values) {
+        //         std::cout << value << " ";
+        //     }
+
+        //     std::cout << std::endl;
+        // }    
+
+        for (size_t i = 0; i < ids2.size(); ++i) {
+            if (ids2[i][0] == -1) {
+
+                vector <float> x;
+
+                for (int g=0; g< 4; ++g){
+                    int each2 = static_cast<int>(std::round(results2.at<float>(i, g)));
+                    x.push_back(each2);
+                }
+
+                cv::Mat detected2 = image2(cv::Rect(x[0], x[1], x[2] - x[0], x[3] - x[1]));
+
+                float class_id2 = results2.at<float>(i, 5);
+
+                int index = -1;
+                float min_score = 1000000.0;
+
+                for (size_t j = 0; j < ids1.size(); ++j) {
+                    if (ids1[j][1] == -1) {
+                        // std::cout << "------------" << std::endl;
+                        vector <float> x2;
+                        for (int k=0; k< 4; ++k){
+                            int each = static_cast<int>(std::round(results1.at<float>(j, k)));
+                            x2.push_back(each);
+                        }
+
+                        cv::Mat detected1 = image1(cv::Rect(x2[0], x2[1], x2[2] - x2[0], x2[3] - x2[1]));
+
+                        float class_id1 = results1.at<float>(j, 5);
+
+                        std::vector<cv::Mat> l1l4 = calculateSVD(detected2);
+
+                    //    for (size_t i = 0; i < l1l4.size(); ++i) {
+                    //         std::cout << "Matrix " << i << ":" << std::endl;
+                    //         std::cout << l1l4[i] << std::endl;
+                    //     }
+
+                        // std::cout << "------------" << std::endl;
+                        
+
+                        if (class_id2 == class_id1){
+                            std::vector<cv::Mat> c1c4 = calculateSVD(detected1);
+
+                                //it is correct now for both l1l4 and c1c4
+
+                        //     for (size_t i = 0; i < c1c4.size(); ++i) {
+                        //             std::cout << "Matrix " << i << ":" << std::endl;
+                        //             std::cout << c1c4[i] << std::endl;
+                        //         }
+                            
+                            cv::Mat l1= l1l4[0];
+                            cv::Mat l2= l1l4[1];
+                            cv::Mat l3= l1l4[2];
+                            cv::Mat l4= l1l4[3];
+
+                            cv::Mat c1=c1c4[0];
+                            cv::Mat c2=c1c4[1];
+                            cv::Mat c3=c1c4[2];
+                            cv::Mat c4=c1c4[3];
+
+                            // std::cout << l1l4[0].size() << std::endl;
+
+                            float ms = get_score(l1,l2,l3,l4,c1,c2,c3,c4);
+                            std::cout << ms<< std::endl;
+                            if (ms < min_score) {
+                                min_score = ms;
+                                index = j;
+                            }
+
+
+                            if (min_score < svd_threshold) {
+                                // std::cout << "-------------------------" << std::endl;
+                                ids2[i][0] = index;
+                                ids2[i][1] = -2;
+                            }
+
+
+
+
+                        }
+
+
+
+                    }
+                }
+            }
+        }
+
+
+
+
+
+
+        // // Iterate through the map and print the key-value pairs
+        // for (const auto& entry : ids1) {
+        //     int key = entry.first;
+        //     const std::vector<float>& values = entry.second;
+
+        //     std::cout << "Key: " << key << ", Values: ";
+            
+        //     for (float value : values) {
+        //         std::cout << value << " ";
+        //     }
+
+        //     std::cout << std::endl;
+        // }    
+
+        // // Iterate through the map and print the key-value pairs
+        // for (const auto& entry : ids2) {
+        //     int key = entry.first;
+        //     const std::vector<float>& values = entry.second;
+
+        //     std::cout << "Key: " << key << ", Values: ";
+            
+        //     for (float value : values) {
+        //         std::cout << value << " ";
+        //     }
+
+        //     std::cout << std::endl;
+        // }    
 
     }
     else {
@@ -800,56 +1064,51 @@ std::vector<std::map<int, std::vector<float>>> compare(
 int main(){
 
     // Define the rows and columns of your matrices
-    int rows = 11;
-    int cols = 6;
+    int rows1 = 12;
+    int cols1 = 6;
 
-    // Create two empty matrices of the desired size and type (float)
-    cv::Mat matrix1(rows, cols, CV_32F);
-    
-
-    // Assign the values to the first matrix
-    float values1[11][6] = {
-        {3.09823608e+02, 6.78893280e+01, 3.82249878e+02, 2.61026123e+02, 6.16126478e-01, 0.00000000e+00},
-        {4.02368355e+00, 2.77120880e+02, 6.03552475e+01, 4.54162903e+02, 7.20909894e-01, 0.00000000e+00},
-        {1.51692847e+03, 2.28836655e+02, 1.60544946e+03, 5.02447174e+02, 8.92754734e-01, 0.00000000e+00},
-        {4.02368164e+00, 5.66826050e+02, 9.25447083e+01, 6.79489197e+02, 2.76628226e-01, 0.00000000e+00},
-        {1.19905774e+03, 2.44931442e+02, 1.39219434e+03, 5.34636536e+02, 8.71798038e-01, 0.00000000e+00},
-        {5.11007751e+02, 3.69665588e+02, 6.96097168e+02, 7.47891785e+02, 8.08927953e-01, 0.00000000e+00},
-        {7.36333984e+02, 6.23157593e+02, 1.08237073e+03, 8.80673279e+02, 8.71798038e-01, 0.00000000e+00},
-        {7.72547119e+02, 2.16765656e+02, 1.06225232e+03, 3.85760284e+02, 3.81411642e-01, 1.30000000e+01},
-        {1.44852588e+03, 4.21973419e+02, 1.72213635e+03, 6.63394409e+02, 7.20909894e-01, 1.30000000e+01},
-        {6.19647217e+02, 7.23749695e+02, 1.34391003e+03, 1.05369177e+03, 2.76628226e-01, 1.30000000e+01},
-        {1.11456018e+03, 3.17357697e+02, 1.29964966e+03, 5.10494476e+02, 4.98769075e-01, 5.60000000e+01}
+    // Create the first matrix and assign values
+    float values1[12][6] = {
+        {1.44852585e+02, 2.97239319e+02, 2.73610474e+02, 5.46707703e+02, 8.08927953e-01, 0.00000000e+00},
+        {8.04736710e+00, 5.74873413e+02, 1.20710495e+02, 7.03631348e+02, 4.98769075e-01, 0.00000000e+00},
+        {2.41420975e+01, 2.57002441e+02, 7.24262924e+01, 4.42091858e+02, 3.81411642e-01, 0.00000000e+00},
+        {1.18698657e+03, 2.44931442e+02, 1.37207593e+03, 5.34636536e+02, 8.71798038e-01, 0.00000000e+00},
+        {5.55268250e+02, 4.50139252e+02, 7.48405090e+02, 7.63986572e+02, 8.71798038e-01, 0.00000000e+00},
+        {1.11456018e+03, 3.21381409e+02, 1.29964966e+03, 5.22565613e+02, 2.76628226e-01, 1.30000000e+01},
+        {7.72547119e+02, 1.92623520e+02, 1.06225232e+03, 3.77712982e+02, 2.76628226e-01, 1.30000000e+01},
+        {1.36805237e+02, 2.93215607e+02, 4.10415710e+02, 4.86352386e+02, 2.76628226e-01, 1.30000000e+01},
+        {1.44852588e+03, 4.21973419e+02, 1.72213635e+03, 6.63394409e+02, 8.38267326e-01, 1.30000000e+01},
+        {6.35741943e+02, 7.47891785e+02, 1.36000488e+03, 1.07200000e+03, 4.98769075e-01, 1.30000000e+01},
+        {1.11456018e+03, 3.21381409e+02, 1.29964966e+03, 5.22565613e+02, 2.76628226e-01, 5.60000000e+01},
+        {2.45444687e+02, 4.86352478e+02, 4.14439362e+02, 7.76057556e+02, 6.16126478e-01, 5.60000000e+01}
     };
 
-    for (int i = 0; i < rows; i++) {
-        for (int j = 0; j < cols; j++) {
+    cv::Mat matrix1(rows1, cols1, CV_32F);
+    for (int i = 0; i < rows1; i++) {
+        for (int j = 0; j < cols1; j++) {
             matrix1.at<float>(i, j) = values1[i][j];
         }
     }
 
-    int rows2 = 13;
+    // Define the rows and columns of the second matrix
+    int rows2 = 10;
     int cols2 = 6;
-    cv::Mat matrix2(rows2, cols2, CV_32F);
 
-    // Assign the values to the second matrix
-    float values2[13][6] = {
-        {3.13847290e+02, 6.78893280e+01, 3.62131439e+02, 2.44931396e+02, 3.81411642e-01, 0.00000000e+00},
-        {1.42438379e+03, 2.00670914e+02, 1.52095227e+03, 4.66234039e+02, 8.71798038e-01, 0.00000000e+00},
-        {4.02368355e+00, 2.77120880e+02, 6.03552475e+01, 4.54162903e+02, 7.20909894e-01, 0.00000000e+00},
-        {4.02368164e+00, 5.62802368e+02, 9.25447083e+01, 7.15702332e+02, 3.81411642e-01, 0.00000000e+00},
-        {1.19905774e+03, 2.44931442e+02, 1.39219434e+03, 5.34636536e+02, 8.71798038e-01, 0.00000000e+00},
-        {7.04144531e+02, 2.00670914e+02, 8.40949768e+02, 5.78897156e+02, 8.08927953e-01, 0.00000000e+00},
-        {5.11007751e+02, 3.69665588e+02, 6.96097168e+02, 7.47891785e+02, 8.08927953e-01, 0.00000000e+00},
-        {7.36333984e+02, 6.23157593e+02, 1.09846545e+03, 8.80673279e+02, 8.71798038e-01, 0.00000000e+00},
-        {1.00592084e+03, 3.09310364e+02, 1.19905774e+03, 5.02447174e+02, 3.26924264e-01, 1.30000000e+01},
+    // Create the second matrix and assign values
+    float values2[10][6] = {
+        {0.00000000e+00, 2.77120880e+02, 6.43789291e+01, 4.54162903e+02, 7.67014623e-01, 0.00000000e+00},
+        {1.44852585e+02, 2.97239319e+02, 2.73610474e+02, 5.46707703e+02, 8.08927953e-01, 0.00000000e+00},
+        {4.02368546e+00, 5.74873413e+02, 7.64499741e+01, 7.35820862e+02, 4.40090358e-01, 0.00000000e+00},
+        {1.18698657e+03, 2.44931442e+02, 1.37207593e+03, 5.34636536e+02, 8.71798038e-01, 0.00000000e+00},
+        {4.90889313e+02, 3.41499756e+02, 7.16215576e+02, 7.76057556e+02, 8.38267326e-01, 0.00000000e+00},
+        {7.72547119e+02, 2.16765656e+02, 1.06225232e+03, 3.85760284e+02, 5.57447791e-01, 1.30000000e+01},
         {1.44852588e+03, 4.21973419e+02, 1.72213635e+03, 6.63394409e+02, 8.08927953e-01, 1.30000000e+01},
-        {6.19647217e+02, 7.23749695e+02, 1.34391003e+03, 1.05369177e+03, 5.57447791e-01, 1.30000000e+01},
-        {1.11456018e+03, 3.21381409e+02, 1.29964966e+03, 5.06470825e+02, 3.26924264e-01, 5.60000000e+01},
-        {0.00000000e+00, 6.19133850e+02, 6.43789291e+01, 8.36412781e+02, 2.76628226e-01, 5.60000000e+01}
+        {6.35741943e+02, 7.47891785e+02, 1.36000488e+03, 1.07200000e+03, 7.67014623e-01, 1.30000000e+01},
+        {1.11456018e+03, 3.05286652e+02, 1.29964966e+03, 5.06470825e+02, 3.81411642e-01, 5.60000000e+01},
+        {2.45444687e+02, 4.94399780e+02, 4.14439362e+02, 7.68010254e+02, 2.76628226e-01, 5.60000000e+01}
     };
 
-
+    cv::Mat matrix2(rows2, cols2, CV_32F);
     for (int i = 0; i < rows2; i++) {
         for (int j = 0; j < cols2; j++) {
             matrix2.at<float>(i, j) = values2[i][j];
@@ -862,8 +1121,8 @@ int main(){
     std::cout << "Matrix2:" << std::endl;
     std::cout << matrix2 << std::endl;
 
-    std::string img1="./test/test_case1/0030.jpg";
-    std::string img2="./test/test_case1/0060.jpg";
+    std::string img1="./test/test_case1/8070.jpg";
+    std::string img2="./test/test_case1/8100.jpg";
 
     std::vector<std::vector<float>> output_id1=output_id(img1, matrix1);
     std::vector<std::vector<float>> output_id2=output_id(img2, matrix2);        
