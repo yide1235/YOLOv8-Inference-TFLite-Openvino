@@ -253,139 +253,204 @@ std::vector<float> xywh2xyxy_scale(const std::vector<float>& boxes, float width,
 // }
 
 
-// std::vector<float> scaleBox(const std::vector<float>& box, int img1Height, int img1Width, int img0Height, int img0Width) {
-//     std::vector<float> scaledBox = box;
 
-//     // Calculate gain and padding
-//     float gain = std::min(static_cast<float>(img1Height) / img0Height, static_cast<float>(img1Width) / img0Width);
-//     int padX = static_cast<int>((img1Width - img0Width * gain) / 2 - 0.1);
-//     int padY = static_cast<int>((img1Height - img0Height * gain) / 2 - 0.1);
+std::vector<float> scaleBox(const std::vector<float>& box, int img1Height, int img1Width, int img0Height, int img0Width) {
+    std::vector<float> scaledBox = box;
 
-//     // Apply padding and scaling
-//     scaledBox[0] -= padX;
-//     scaledBox[2] -= padX;
-//     scaledBox[1] -= padY;
-//     scaledBox[3] -= padY;
+    // Calculate gain and padding
+    float gain = std::min(static_cast<float>(img1Height) / img0Height, static_cast<float>(img1Width) / img0Width);
+    int padX = static_cast<int>((img1Width - img0Width * gain) / 2 - 0.1);
+    int padY = static_cast<int>((img1Height - img0Height * gain) / 2 - 0.1);
 
-//     scaledBox[0] /= gain;
-//     scaledBox[2] /= gain;
-//     scaledBox[1] /= gain;
-//     scaledBox[3] /= gain;
+    // Apply padding and scaling
+    scaledBox[0] -= padX;
+    scaledBox[2] -= padX;
+    scaledBox[1] -= padY;
+    scaledBox[3] -= padY;
 
-//     // Clip the box
-//     scaledBox[0] = std::max(0.0f, std::min(scaledBox[0], static_cast<float>(img0Width)));
-//     scaledBox[2] = std::max(0.0f, std::min(scaledBox[2], static_cast<float>(img0Width)));
-//     scaledBox[1] = std::max(0.0f, std::min(scaledBox[1], static_cast<float>(img0Height)));
-//     scaledBox[3] = std::max(0.0f, std::min(scaledBox[3], static_cast<float>(img0Height)));
+    scaledBox[0] /= gain;
+    scaledBox[2] /= gain;
+    scaledBox[1] /= gain;
+    scaledBox[3] /= gain;
 
-//     return scaledBox;
-// }
+    // Clip the box
+    scaledBox[0] = std::max(0.0f, std::min(scaledBox[0], static_cast<float>(img0Width)));
+    scaledBox[2] = std::max(0.0f, std::min(scaledBox[2], static_cast<float>(img0Width)));
+    scaledBox[1] = std::max(0.0f, std::min(scaledBox[1], static_cast<float>(img0Height)));
+    scaledBox[3] = std::max(0.0f, std::min(scaledBox[3], static_cast<float>(img0Height)));
 
-
-// std::vector<int> NMS(const std::vector<std::vector<float>>& boxes, float overlapThresh) {
-//     // Return an empty vector if no boxes given
-//     if (boxes.empty()) {
-//         return std::vector<int>();
-//     }
-
-//     std::vector<float> x1, y1, x2, y2, areas;
-//     std::vector<int> indices(boxes.size());
-
-//     // Extract coordinates and compute areas
-//     for (size_t i = 0; i < boxes.size(); ++i) {
-//         x1.push_back(boxes[i][0]);
-//         y1.push_back(boxes[i][1]);
-//         x2.push_back(boxes[i][2]);
-//         y2.push_back(boxes[i][3]);
-//         areas.push_back((x2[i] - x1[i] + 1) * (y2[i] - y1[i] + 1));
-//         indices[i] = static_cast<int>(i);
-//     }
-
-//     std::vector<int> keep;
-
-//     for (size_t i = 0; i < boxes.size(); ++i) {
-//         std::vector<int> tempIndices;
-//         for (size_t j = 0; j < boxes.size(); ++j) {
-//             if (j != i) {
-//                 tempIndices.push_back(static_cast<int>(j));
-//             }
-//         }
-
-//         float xx1 = std::max(x1[i], x1[tempIndices[0]]);
-//         float yy1 = std::max(y1[i], y1[tempIndices[0]]);
-//         float xx2 = std::min(x2[i], x2[tempIndices[0]]);
-//         float yy2 = std::min(y2[i], y2[tempIndices[0]]);
-
-//         float w = std::max(0.0f, xx2 - xx1 + 1);
-//         float h = std::max(0.0f, yy2 - yy1 + 1);
-
-//         float overlap = (w * h) / areas[tempIndices[0]];
-
-//         if (overlap <= overlapThresh) {
-//           for (int index : indices) {
-//               if (index != i) {
-//                   indices.push_back(index);
-//               }
-//           }
-//           keep.push_back(indices[i]);
-//         }
-//     }
-
-//     return keep;
-// }
+    return scaledBox;
+}
 
 
-// std::vector<int> NMS(std::vector<std::vector<float>>& boxes, float overlapThreshold) {
-//     // Return an empty list, if no boxes given
-//     if (boxes.empty()) {
-//         return std::vector<int>();
-//     }
 
-//     std::vector<float> x1, y1, x2, y2, areas;
-//     std::vector<int> indices;
+std::vector<int> NMS(const std::vector<std::vector<float>>& boxes, float overlapThresh) {
+    // Return an empty vector if no boxes given
+    if (boxes.empty()) {
+        return std::vector<int>();
+    }
+    // std::cout << boxes.size() << std::endl;
 
-//     // Extract x1, y1, x2, y2 from the boxes
-//     for (const auto& box : boxes) {
-//         x1.push_back(box[0]);
-//         y1.push_back(box[1]);
-//         x2.push_back(box[2]);
-//         y2.push_back(box[3]);
-//     }
+    std::vector<float> x1, y1, x2, y2, areas;
+    std::vector<int> indices(boxes.size());
 
-//     // Compute the area of the bounding boxes and sort the bounding
-//     // Boxes by the bottom-right y-coordinate of the bounding box
-//     for (size_t i = 0; i < boxes.size(); ++i) {
-//         float area = (x2[i] - x1[i] + 1) * (y2[i] - y1[i] + 1);
-//         areas.push_back(area);
-//         indices.push_back(static_cast<int>(i));
-//     }
+    // Extract coordinates and compute areas
 
-//     for (size_t i = 0; i < boxes.size(); ++i) {
-//         std::vector<int> temp_indices;
-//         for (size_t j = 0; j < indices.size(); ++j) {
-//             if (indices[j] != static_cast<int>(i)) {
-//                 temp_indices.push_back(indices[j]);
-//             }
-//         }
+    int a =0;
+    while(a<boxes.size()){
+        x1.push_back(boxes[a][0]);    
+        y1.push_back(boxes[a][1]);
+        x2.push_back(boxes[a][2]);
+        y2.push_back(boxes[a][3]);
+        areas.push_back((x2[a] - x1[a] + 1) * (y2[a] - y1[a] + 1));
+        indices[a] = static_cast<int>(a);
+        a++;
+    }
 
-//         float xx1 = std::max(boxes[i][0], boxes[temp_indices[0]][0]);
-//         float yy1 = std::max(boxes[i][1], boxes[temp_indices[0]][1]);
-//         float xx2 = std::min(boxes[i][2], boxes[temp_indices[0]][2]);
-//         float yy2 = std::min(boxes[i][3], boxes[temp_indices[0]][3]);
+    std::vector<int> keep;
 
-//         float w = std::max(0.0f, xx2 - xx1 + 1);
-//         float h = std::max(0.0f, yy2 - yy1 + 1);
 
-//         float overlap = (w * h) / areas[temp_indices[0]];
+    std::vector<int> tempIndices;
+    int o=0;
+    while(o<boxes.size()){
+        tempIndices.push_back(o);
+        // std::cout << o << std::endl;
+        o++;
+    }
 
-//         if (overlap <= overlapThreshold) {
-//             // indices.erase(indices.begin() + i);
+    
+    int q =0;
+    while(q<boxes.size()){
+    std::vector<int>rest;
 
-//         }
-//     }
+        int p=q+1;
+        while(p<boxes.size()){
+            rest.push_back(p);
+            // std::cout << p << std::endl;
+            p++;
+        }
+        // std::cout << q << std::endl;
 
-//     return indices;
-// }
+        // for (int val : rest) {
+        //     std::cout << val << " ";
+        // }
+        // std::cout << std::endl;
+        // std::cout << "-------" << std::endl;
+
+        vector<float> xx1;
+        vector<float> yy1;
+        vector<float> xx2;
+        vector<float> yy2;
+        int l=q+1;
+        while(l<boxes.size()){
+            xx1.push_back(std::max(boxes[l][0], boxes[q][0]));
+            yy1.push_back(std::max(boxes[l][1], boxes[q][1]));
+            xx2.push_back(std::min(boxes[l][2], boxes[q][2]));
+            yy2.push_back(std::min(boxes[l][3], boxes[q][3]));
+
+            
+            l++;
+        }
+
+        assert( xx2.size() == xx1.size());
+        
+        vector<float>w;
+        for(int x=0; x< xx1.size();x++){
+            w.push_back(std::max(0.0f,(xx2[x]-xx1[x]+1)));
+        }
+
+        assert( yy2.size() == yy1.size());
+
+        vector<float>h;
+        for(int y=0; y<yy1.size();y++){
+            h.push_back(std::max(0.0f, (yy2[y]-yy1[y]+1)));
+        }
+
+        // for(int c=0;c<w.size();c++){
+        //     std::cout << w[c] << std::endl;
+        // }
+        // for(int c=0;c<h.size();c++){
+        //     std::cout << h[c] << std::endl;
+        // }
+        // float xx1 = std::max(boxes[q][0], x1[rest[0]]);
+        
+        // float yy1 = std::max(boxes[q][1], y1[rest[0]]);
+        // float xx2 = std::min(boxes[q][2], x2[rest[0]]);
+        // float yy2 = std::min(boxes[q][0], y2[rest[0]]);
+
+        // float w = std::max(0.0f, xx2 - xx1 + 1);
+        // float h = std::max(0.0f, yy2 - yy1 + 1);
+
+        vector<float> temp_areas;
+        int v=q+1;
+        while(v<boxes.size()){
+            temp_areas.push_back(areas[v]);
+            v++;
+        }
+
+        // for(int v=0;v<temp_areas.size();v++){
+        //     std::cout << temp_areas[v] << std::endl;
+        // }
+
+        vector<float> wxh;
+        assert(w.size()==h.size());
+        for(int b=0;b<w.size();b++){
+            wxh.push_back(w[b]*h[b]);
+        }
+
+        vector<float> overlap;
+        assert(wxh.size()==temp_areas.size());
+        for(int n=0;n<wxh.size();n++){
+            overlap.push_back(wxh[n]/temp_areas[n]);
+            // std::cout<< wxh[n]/temp_areas[n] << std::endl;
+        }
+
+        // float overlap = (w * h) / areas[rest[0]];
+
+        vector<int> results;
+        results.push_back(q);
+        for(int m=0;m<rest.size();m++){
+            results.push_back(rest[m]);
+        }
+
+        bool exist=false;
+        for(int s=0;s<overlap.size();s++){
+            if(overlap[s]>overlapThresh){
+                exist=true;
+            }
+        }
+        
+        vector<int>temp2;
+        // std::cout << exist << "aaaaaaaa" <<std::endl; 
+        if(exist==1){
+            
+            for(int d=0;d<results.size();d++){
+                if(results[d]!=q){
+                    temp2.push_back(results[d]);
+                }
+            }
+            keep=temp2;
+        }
+        // std::cout << temp2.size() << "ppppppppppp" <<std::endl; 
+        // results=temp2;
+        // if (overlap <= overlapThresh) {
+        //     for (int index2 : indices) {
+        //         if (index2 != i) {
+        //             indices.push_back(index2);
+        //         }
+        //     }
+        //     keep.push_back(indices[i]);
+
+        // }
+ 
+        q++;
+        // std::cout << "\n" <<std::endl; 
+    }
+   
+    // std::cout << keep[0] <<std::endl; 
+
+    return keep;
+}
 
 
 
@@ -429,6 +494,8 @@ std::vector<std::vector<float>> process_4(const std::unique_ptr<tflite::Interpre
 
   const float width=img.rows;
   const float height=img.cols;
+  // std::cout << width << height <<std::endl;
+  //width is 1080, height is 1920
 
   end = std::chrono::system_clock::now();
   elapsed_seconds = end - start;
@@ -491,7 +558,7 @@ std::vector<std::vector<float>> process_4(const std::unique_ptr<tflite::Interpre
   
   // flatten rgb image to input layer.
   // float* input_data = interpreter->typed_input_tensor<float>(0);
-  memcpy(input_tensor->data.f, inputImg.ptr<float>(0), 640*640*3* sizeof(float));
+  memcpy(input_tensor->data.f, inputImg.ptr<float>(0), HEIGHT*WIDTH*3* sizeof(float));
 
   // cout << " the 600001 is " << input_tensor->data.f[600001] << endl;
   // cout << " the 600002 is " << input_tensor->data.f[600002] << endl;
@@ -570,56 +637,10 @@ std::vector<std::vector<float>> process_4(const std::unique_ptr<tflite::Interpre
   // printf("%f ", box_vec[2*8400-2]);
   // printf("%f ", box_vec[2*8400-3]);
   // printf("%f ", box_vec[2*8400-4]);
-  // //now here is correct
+  // // now here is correct
 
 
-  //same way with python
-
-  // std::vector<std::vector<float>> boxes;
-  // std::vector<std::vector<float>> probs;
-
-  //ready to delete
-  // cv::Mat confidence;
-
-  // cv::Mat bbox;
-  // int base = 4 * 8400;
-  // int m = 0;
-
-
-  // while (m < 8400) {
-  //   std::vector<float> temp;
-  //   int n = 0;
-
-  //   std::vector<float> temp1;
-
-  //   while (n < 80) {
-
- 
-  //     temp1.push_back(box_vec[n * 8400 + m + base]);
-
-
-  //     std::vector<float> temp2;
-  //     int i = 0;
-  //     while (i < 4) {
-  //       temp2.push_back(box_vec[i * 8400 + m]);
-  //       i++;
-  //     }
-
-
-  //     // bbox.push_back(xywh2xyxy_scale(temp2,640,640));
-  //     bbox.push_back(temp2);
-
-  //     n++;
-  //   }
-  //   confidence.push_back(temp1);
-  //   m++;
-  // }
-
-  // std::cout << confidence.rows << confidence.cols<< std::endl;
-  // std::cout << bbox.rows << bbox.cols<< std::endl;  
-  //ready to delete
-
-
+  //implemented a faster way in C++
 
   //use this
   std::vector<float> confidence;
@@ -638,26 +659,30 @@ std::vector<std::vector<float>> process_4(const std::unique_ptr<tflite::Interpre
 
 
     while (n < 80) {
-      if (box_vec[n * 8400 + m + base] > 0.25) {
+      if (box_vec[n * 8400 + m + base] >= 0.25) {
         index.push_back(n);
         confidence.push_back(box_vec[n * 8400 + m + base]);
 
 
         std::vector<float> temp2;
         int i = 0;
-          while (i < 4) {
-            temp2.push_back(box_vec[i * 8400 + m]);
-            i++;
-          }
+        while (i < 4) {
+          temp2.push_back(box_vec[i * 8400 + m]);
+          i++;
+        }
 
 
-          // bbox.push_back(xywh2xyxy_scale(temp2,640,640));
-          bbox.push_back(temp2);
+        // bbox.push_back(xywh2xyxy_scale(temp2,640,640));
+        bbox.push_back(temp2);
       }
       n++;
     }
     m++;
   }
+
+  std::cout << confidence.size()<< std::endl;
+  std::cout << index.size()<< std::endl;
+  std::cout << bbox.size()<< std::endl;
 
   // Print confidence vector
   std::cout << "Confidence vector:" << std::endl;
@@ -685,96 +710,190 @@ std::vector<std::vector<float>> process_4(const std::unique_ptr<tflite::Interpre
   }
 
 
-  //image0frame40814.jpg
-  //Confidence vector:
-  // 0.876689 0.345122 0.876689 0.932226 0.904457 0.904457 0.932226 0.904457 0.654542 0.932226 0.932226 
-  // Index vector:
-  // 0 0 0 0 0 0 0 0 0 0 0 
-  // Bbox vector:
-  // 0.642641 0.531567 0.170577 0.468096 
-  // 0.642641 0.531567 0.170577 0.468096 
-  // 0.642641 0.547435 0.170577 0.468096 
-  // 0.642641 0.547435 0.170577 0.468096 
-  // 0.642641 0.547435 0.170577 0.468096 
-  // 0.642641 0.531567 0.170577 0.483964 
-  // 0.642641 0.547435 0.170577 0.468096 
-  // 0.642641 0.547435 0.186445 0.468096 
-  // 0.642641 0.531567 0.170577 0.468096 
-  // 0.642641 0.547435 0.170577 0.468096 
-  // 0.642641 0.531567 0.186445 0.483964 
+
+  // std::vector<std::vector<float>> results;
 
 
 
-  //8880.jpg
 
-  //   Confidence vector:
-  // 0.876689 0.345122 0.876689 0.932226 0.904457 0.904457 0.932226 0.904457 0.654542 0.932226 0.932226 
-  // Index vector:
-  // 0 0 0 0 0 0 0 0 0 0 0 
-  // Bbox vector:
-  // 0.642641 0.531567 0.170577 0.468096 
-  // 0.642641 0.531567 0.170577 0.468096 
-  // 0.642641 0.547435 0.170577 0.468096 
-  // 0.642641 0.547435 0.170577 0.468096 
-  // 0.642641 0.547435 0.170577 0.468096 
-  // 0.642641 0.531567 0.170577 0.483964 
-  // 0.642641 0.547435 0.170577 0.468096 
-  // 0.642641 0.547435 0.186445 0.468096 
-  // 0.642641 0.531567 0.170577 0.468096 
-  // 0.642641 0.547435 0.170577 0.468096 
-  // 0.642641 0.531567 0.186445 0.483964 
+  for(int q=0;q<bbox.size();q++){
+      bbox[q]=xywh2xyxy_scale(bbox[q],640,640);
+      for(int z=0;z<bbox[q].size();z++){
+          // std::cout<< bbox[q][z] << std::endl;
+
+      }
+      // std::cout<< "=======" << std::endl;
+  }
 
 
 
   std::vector<std::vector<float>> results;
 
-  // int confidence_length=confidence.size();
-  // int class_length=index.size();
-  // assert(confidence_length == class_length);
+  int confidence_length=confidence.size();
+  int class_length=index.size();
+  assert(confidence_length == class_length);
+  // std::cout << bbox.size()<<std::endl; //11
+  // std::cout << bbox[0].size()<<std::endl; //4
+  // std::cout << confidence_length<<std::endl;
+  assert(confidence_length == bbox.size());
 
-  // for(int i=0;i< confidence_length;i++){
-  //   std::vector<int> temp;
-  //   for (int j=0;j< class_length;j++){
-  //     std::vector<std::vector<float>>box;
-  //     if(index[j]==i){
-  //       temp.push_back(j);
-  //       box.push_back(bbox[j]);
-  //     }
+  int j=0; 
+  while(j<80){
+      std::vector<int> temp;
+      std::vector<std::vector<float>>box;
+      for (int i=0;i< class_length;i++){
+
+      if(index[i]==j){
+          temp.push_back(i);
+          box.push_back(bbox[i]);
+      }
+      }
+
+      std::vector<std::vector<float>> box_selected;
+      std::vector<float> confidence_selected;
       
-  //     std::vector<std::vector<float>> box_selected;
-  //     std::vector<float> confidence_selected;
-  //     if (temp.size()>0){
-  //       //what type does nms return
-  //       std::vector<int> indices=NMS(box, 0.45); //this line start error:
-        // if(indices.size()>0){
-        //   for(int k=0;k<indices.size();k++){
-        //     box_selected.push_back(box[indices[k]]);
-        //     confidence_selected.push_back(confidence[indices[k]]);
-        //   }
-        //   for(int p=0;p<box_selected.size();p++){
-        //     box_selected[p]=scaleBox(box_selected[p], HEIGHT, WIDTH, height, width);
-        //   }
+      if (temp.size()>0){
 
-        // }
-      // }
-      // std::vector<float> temp3;
-      // for(int u=0;u<box_selected.size();u++){
-      //   temp3=box_selected[u];
-      //   temp3.push_back(confidence_selected[u]);
-      //   float floatValue = static_cast<float>(j);
-      //   temp3.push_back(floatValue);
-      // }
-      // results.push_back(temp3);
+          std::vector<int> indices=NMS(box, 0.45);
+          // std::cout << indices.size() <<  std::endl; 
+
+          if(indices.size()>0){
+          for(int k=0;k<indices.size();k++){
+              box_selected.push_back(box[indices[k]]);
+              confidence_selected.push_back(confidence[indices[k]]);
+          }
+          for(int p=0;p<box_selected.size();p++){
+              box_selected[p]=scaleBox(box_selected[p], HEIGHT, WIDTH, static_cast<int>(width), static_cast<int>(height) );
+          }
+
+          }
+      
+      std::vector<float> temp3;
+      for(int u=0;u<box_selected.size();u++){
+          temp3=box_selected[u];
+          temp3.push_back(confidence_selected[u]);
+          float floatValue = static_cast<float>(j);
+          temp3.push_back(floatValue);
+      }
+      results.push_back(temp3);
+      }
+      j++;
+  }
+
+  // Iterate through the outer vector
+  for (const std::vector<float>& innerVec : results) {
+      // Iterate through the inner vector and print its elements
+      for (float value : innerVec) {
+          std::cout << value << " ";
+      }
+      std::cout << std::endl; // Print a newline after each inner vector
+  }
+
+
+
+
+
+
+
+
+ //approach two:
+  // cv::Mat boxes(8400,4,CV_32F);
+  // cv::Mat probs(8400,80, CV_32F);
+
+  // for(int i=0;i<8400;i++){
+  //   for(int j=0;j<4;j++){
+  //     boxes.at<float>(i,j)+=box_vec[j*8400+i];
   //   }
   // }
 
-  // for (const std::vector<float>& row : results) {
-  //   // Iterate through the elements in each row (inner vector)
-  //   for (float element : row) {
-  //       std::cout << element << ' ';
+  // for(int i=0;i<8400;i++){
+  //   for(int j=4;j<84;j++){
+  //      probs.at<float>(i,j)+=box_vec[j*8400+i];
   //   }
-  //   std::cout << std::endl; // Print a newline after each row
   // }
+  // cv::Mat scores2(1,8400,CV_32F);
+  // cv::Mat index(1,8400,CV_32F);
+  // for(int i=0;i<8400;i++){
+  //   float max_row=probs.at<float>(0,0);
+  //   for(int j=0;j<80;j++){
+  //     if(probs.at<float>(i,j)>max_row){
+  //       scores2.at<float>(1,i)=probs.at<float>(i,j);
+  //       index.at<float>(1,i)=static_cast<float>(j);
+  //       max_row=probs.at<float>(i,j);
+  //     }
+  //   }
+  // }
+  // std::vector<int>idx_th;
+  // for(int i=0;i<scores2.cols;i++){
+  //   if(scores2.at<float>(1,i)>0.25f){
+  //     idx_th.push_back(i);
+  //   }
+  // }
+
+  // for(int i=0;i<idx_th.size();i++){
+  //   std::cout<<idx_th[i]<<std::endl;
+  // }
+
+  
+  // std::vector<std::vector<float>> boxes2;
+  // for(int i=0;i<idx_th.size();i++){
+  //   std::vector<float> temp;
+  //   temp.push_back(boxes.at<float>(idx_th[i],0));
+  //   temp.push_back(boxes.at<float>(idx_th[i],1));
+  //   temp.push_back(boxes.at<float>(idx_th[i],2));
+  //   temp.push_back(boxes.at<float>(idx_th[i],3));
+  //   boxes2.push_back(temp);
+  // }
+
+  // std::vector<float> scores3;
+  // for(int i=0;i<idx_th.size();i++){
+  //   scores3.push_back(scores2.at<float>(1,idx_th[i]));
+  // }
+
+  // std::vector<int> preds;
+  // for(int i=0;i<idx_th.size();i++){
+  //   preds.push_back(static_cast<int>(index.at<float>(1,idx_th[i])));
+  // }
+  
+  //   // Print preds
+  // std::cout << "preds: ";
+  // for (const int& value : preds) {
+  //     std::cout << value << " ";
+  // }
+  // std::cout << std::endl;
+
+  // // Print scores3
+  // std::cout << "scores3: ";
+  // for (const float& value : scores3) {
+  //     std::cout << value << " ";
+  // }
+  // std::cout << std::endl;
+
+  // // Print boxes2
+  // std::cout << "boxes2:" << std::endl;
+  // for (const std::vector<float>& box : boxes2) {
+  //     for (const float& value : box) {
+  //         std::cout << value << " ";
+  //     }
+  //     std::cout << std::endl;
+  // }
+  //
+  //***approach1 and apraoch2 is the same results, but approach1 is way more faster
+  //
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -863,13 +982,13 @@ int main(int argc, char **argv)
   std::unique_ptr<tflite::FlatBufferModel> model =
       tflite::FlatBufferModel::BuildFromFile("yolov8n_integer_quant.tflite");
   
-  //auto ext_delegate_option = TfLiteExternalDelegateOptionsDefault("/usr/lib/libvx_delegate.so");
-  //auto ext_delegate_ptr = TfLiteExternalDelegateCreate(&ext_delegate_option);
+  auto ext_delegate_option = TfLiteExternalDelegateOptionsDefault("/usr/lib/libvx_delegate.so");
+  auto ext_delegate_ptr = TfLiteExternalDelegateCreate(&ext_delegate_option);
   tflite::ops::builtin::BuiltinOpResolver resolver;
   std::unique_ptr<tflite::Interpreter> interpreter;
   tflite::InterpreterBuilder(*model, resolver)(&interpreter);
-  //interpreter->ModifyGraphWithDelegate(ext_delegate_ptr);
-  interpreter->SetAllowFp16PrecisionForFp32(true);
+  interpreter->ModifyGraphWithDelegate(ext_delegate_ptr);
+  interpreter->SetAllowFp16PrecisionForFp32(false);
   interpreter->AllocateTensors();
 
   std::cout << " Tensorflow Test " << endl;
@@ -881,8 +1000,9 @@ int main(int argc, char **argv)
   // cout << "Got image char array " << endl;
   // string resp = process_frame(img, height, width);
 
-  string imgf1= "image0frame40814.jpg";
+  // string imgf1= "image0frame40808.jpg";
   // string imgf1 ="8880.jpg";
+  string imgf1="image0frame37484.jpg";
   string imgf2 = "image0frame30.jpg";
   if (argc == 3)
   {
@@ -898,7 +1018,7 @@ int main(int argc, char **argv)
 
   int filesize = 0;
   char *img1 = read_image(imgf1, filesize);
-  cv::Mat img1_mat = convert_image(img1, 1072, 1920, filesize);
+  cv::Mat img1_mat = convert_image(img1, 1080, 1920, filesize);
   // char *img2 = read_image(imgf2, filesize);
   // cv::Mat img2_mat = convert_image(img2, 1080, 1920, filesize);
   // cv::Mat img1 = cv::imread("./0030.jpg");
