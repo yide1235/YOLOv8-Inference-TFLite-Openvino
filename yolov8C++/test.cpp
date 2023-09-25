@@ -433,7 +433,7 @@ std::vector<int> NMS(const std::vector<std::vector<float>>& boxes, float overlap
 
 
 
-std::vector<std::vector<float>> process_4(const std::unique_ptr<tflite::Interpreter>& interpreter,string infile, string outfile, vector<Rect> &nmsrec, vector<int> &pick, vector<int> &ids, cv::Mat *inp = NULL)
+std::vector<std::vector<float>> process_4(const std::unique_ptr<tflite::Interpreter>& interpreter,const string& infile, string outfile, vector<Rect> &nmsrec, vector<int> &pick, vector<int> &ids, cv::Mat *inp = NULL)
 {
 
 
@@ -1060,16 +1060,35 @@ cv::Mat plotOneBox(const std::vector<float>& x, cv::Mat im, cv::Scalar color = c
 }
 
 void plotBboxes(const std::string& imgPath, const std::vector<std::vector<float>>& results,
-                const std::vector<std::string>& coco_names, const std::string& savePath = "") {
+                const std::vector<std::string>& coco_names, const std::string& savePath, 
+                const std::map<int, std::vector<float>>& trackingData) {
     cv::Mat im0 = cv::imread(imgPath);
     
-    for (const std::vector<float>& value : results) {
+    for (int i = 0; i < results.size(); ++i) {
+        const std::vector<float>& value = results[i];
         std::vector<float> bbox(value.begin(), value.begin() + 4);
         float confidence = value[4];
         int clsId = static_cast<int>(value[5]);
-        std::string clsName = coco_names[clsId]; // Define your cocoNames array
+        std::string clsName = coco_names[clsId];
 
-        std::string label = clsName + " " + std::to_string(confidence);
+        // Retrieve the tracking ID from the trackingData map
+        int trackingid=-1;
+        
+        auto it = trackingData.find(i);
+        if(it != trackingData.end()){
+          std::vector<float> foundValue = it->second;
+          if (foundValue.size() > 0) {
+              trackingid = static_cast<int>(foundValue[0]);
+              // std::cout << foundValue[0] << std::endl;
+          }
+        }
+        else{
+          trackingid=-1;
+        }
+        // std::cout << trackingid << std::endl;
+        // Include tracking ID, class name, and confidence in the label
+        std::string label = clsName + " " + std::to_string(trackingid) + " " + std::to_string(confidence);
+        // std::string label = clsName + " "  + std::to_string(confidence);
         cv::Scalar color = getColor(clsId, true);
 
         im0 = plotOneBox(bbox, im0, color, label);
@@ -1088,7 +1107,7 @@ void plotBboxes(const std::string& imgPath, const std::vector<std::vector<float>
 //./yolov8_integer_tracking
 
 //simply copy objects here
-std::vector<std::vector<float>> output_id(const std::string& img_path, cv::Mat& results){
+std::vector<std::vector<float>> output_id(const std::string& img_path, const std::vector<std::vector<float>>& results){
 
     cv::Mat img = cv::imread(img_path);
     if (img.empty()) {
@@ -1101,20 +1120,20 @@ std::vector<std::vector<float>> output_id(const std::string& img_path, cv::Mat& 
     std::vector<std::vector<float>> unique_ids;
 
 
-    int len_results=results.rows;
+    int len_results=results.size();
 
     // cv::Mat unique_ids= cv::Mat::zeros(len_results, 27, CV_32F);
     //27 is ((10*(cls_id), b,g,r, confidence*100, x1/3,y1/3,x2/3,y2/3, b_detected/45, g_detected/45, r_detected/45))
     // 1,6,6,6,1,4,3,   
 
     for (int i =0; i< len_results; ++i){
-        int cls_id=results.at<float>(i, 5);
-        float confidence = results.at<float>(i, 4);
+        int cls_id=results[i][5];
+        float confidence = results[i][4];
 
         vector <float> x;
 
         for (int j=0; j< 4; ++j){
-            int each = static_cast<int>(std::round(results.at<float>(i, j)));
+            int each = static_cast<int>(std::round(results[i][j]));
             x.push_back(each);
         }
 
@@ -1423,12 +1442,15 @@ std::vector<cv::Mat> calculateSVD(const cv::Mat& detected) {
     rc = channels[0];
     gc = channels[1];
     bc = channels[2];
+    
 
     // Perform SVD on each channel
     cv::SVD svd_rc(rc, cv::SVD::FULL_UV);
     cv::SVD svd_gc(gc, cv::SVD::FULL_UV);
     cv::SVD svd_bc(bc, cv::SVD::FULL_UV);
-
+    // cv::SVD svd_rc(rc, cv::SVD::MODIFY_A);
+    // cv::SVD svd_gc(gc, cv::SVD::MODIFY_A);
+    // cv::SVD svd_bc(bc, cv::SVD::MODIFY_A);
     // Get the first 5 singular values for each channel
     cv::Mat s_rc, s_gc, s_bc;
 
@@ -1533,9 +1555,9 @@ std::map<int, std::vector<float>> generateIds(const std::vector<std::vector<floa
 }
 
 std::vector<std::map<int, std::vector<float>>> compare(
-    const std::string& img_path1, cv::Mat& results1,
+    const std::string& img_path1, const std::vector<std::vector<float>>& results1,
     const std::vector<std::vector<float>>& unique_ids1,
-    const std::string& img_path2, cv::Mat& results2,
+    const std::string& img_path2, const std::vector<std::vector<float>>& results2,
     const std::vector<std::vector<float>>& unique_ids2) 
 {
 
@@ -1562,7 +1584,9 @@ std::vector<std::map<int, std::vector<float>>> compare(
     std::map<int, std::vector<float>> ids2;
     
     if (unique_ids1.size() > unique_ids2.size()) {
+        // std::cout << "-------------------------" << std::endl;
         ids1 = generateIds(unique_ids1);
+        // std::cout << "==============================" << std::endl;
 
         int addition = 1;
 
@@ -1580,7 +1604,7 @@ std::vector<std::map<int, std::vector<float>>> compare(
         //     std::cout << std::endl;
         // }        
 
-        
+        // std::cout << "-------------------------" << std::endl;
         // Iterate through the vectors in unique_ids1
         for (size_t i = 0; i < unique_ids2.size(); ++i) {
             float min_norm2 = std::numeric_limits<float>::infinity();
@@ -1610,7 +1634,7 @@ std::vector<std::map<int, std::vector<float>>> compare(
             }
         }
 
-
+        // std::cout << "==============================" << std::endl;
         // ids1[0][0]=3;
 
 
@@ -1642,7 +1666,7 @@ std::vector<std::map<int, std::vector<float>>> compare(
 
         //     std::cout << std::endl;
         // }    
-
+        // std::cout << "-------------------------" << std::endl;
         
         
 
@@ -1675,36 +1699,36 @@ std::vector<std::map<int, std::vector<float>>> compare(
             }
         }
 
-    
+        // std::cout << "-------------------------" << std::endl;
+        std::cout << "==============================" << std::endl;
 
+        // Iterate through the map and print the key-value pairs
+        for (const auto& entry : ids1) {
+            int key = entry.first;
+            const std::vector<float>& values = entry.second;
 
-        // // Iterate through the map and print the key-value pairs
-        // for (const auto& entry : ids1) {
-        //     int key = entry.first;
-        //     const std::vector<float>& values = entry.second;
-
-        //     std::cout << "Key: " << key << ", Values: ";
+            std::cout << "Key: " << key << ", Values: ";
             
-        //     for (float value : values) {
-        //         std::cout << value << " ";
-        //     }
+            for (float value : values) {
+                std::cout << value << " ";
+            }
 
-        //     std::cout << std::endl;
-        // }    
+            std::cout << std::endl;
+        }    
 
-        // // Iterate through the map and print the key-value pairs
-        // for (const auto& entry : ids2) {
-        //     int key = entry.first;
-        //     const std::vector<float>& values = entry.second;
+        // Iterate through the map and print the key-value pairs
+        for (const auto& entry : ids2) {
+            int key = entry.first;
+            const std::vector<float>& values = entry.second;
 
-        //     std::cout << "Key: " << key << ", Values: ";
+            std::cout << "Key: " << key << ", Values: ";
             
-        //     for (float value : values) {
-        //         std::cout << value << " ";
-        //     }
+            for (float value : values) {
+                std::cout << value << " ";
+            }
 
-        //     std::cout << std::endl;
-        // }    
+            std::cout << std::endl;
+        }    
 
         for (size_t i = 0; i < ids2.size(); ++i) {
             if (ids2[i][0] == -1) {
@@ -1712,42 +1736,48 @@ std::vector<std::map<int, std::vector<float>>> compare(
                 vector <float> x;
 
                 for (int g=0; g< 4; ++g){
-                    int each2 = static_cast<int>(std::round(results2.at<float>(i, g)));
+                    int each2 = static_cast<int>(std::round(results2[i][g]));
                     x.push_back(each2);
                 }
 
                 cv::Mat detected2 = image2(cv::Rect(x[0], x[1], x[2] - x[0], x[3] - x[1]));
 
-                float class_id2 = results2.at<float>(i, 5);
+                float class_id2 = results2[i][5];
 
                 int index = -1;
-                float min_score = 1000000.0;
-
+                float min_score = 200.0;
+        
                 for (size_t j = 0; j < ids1.size(); ++j) {
                     if (ids1[j][1] == -1) {
-                        // std::cout << "------------" << std::endl;
+      
                         vector <float> x2;
                         for (int k=0; k< 4; ++k){
-                            int each = static_cast<int>(std::round(results1.at<float>(j, k)));
+                            int each = static_cast<int>(std::round(results1[j][k]));
                             x2.push_back(each);
                         }
 
                         cv::Mat detected1 = image1(cv::Rect(x2[0], x2[1], x2[2] - x2[0], x2[3] - x2[1]));
 
-                        float class_id1 = results1.at<float>(j, 5);
+                        float class_id1 = results1[j][5];
+      
 
-                        std::vector<cv::Mat> l1l4 = calculateSVD(detected2);
+                        cv::Mat ds_detected2;
+                        cv::resize(detected2, ds_detected2, cv::Size(30, 30));
+
+                        std::vector<cv::Mat> l1l4 = calculateSVD(ds_detected2);
 
                     //    for (size_t i = 0; i < l1l4.size(); ++i) {
                     //         std::cout << "Matrix " << i << ":" << std::endl;
                     //         std::cout << l1l4[i] << std::endl;
                     //     }
 
-                        // std::cout << "------------" << std::endl;
+
                         
 
                         if (class_id2 == class_id1){
-                            std::vector<cv::Mat> c1c4 = calculateSVD(detected1);
+                            cv::Mat ds_detected1;
+                            cv::resize(detected1, ds_detected1, cv::Size(30, 30));
+                            std::vector<cv::Mat> c1c4 = calculateSVD(ds_detected1);
 
                                 //it is correct now for both l1l4 and c1c4
 
@@ -1777,7 +1807,7 @@ std::vector<std::map<int, std::vector<float>>> compare(
 
 
                             if (min_score < svd_threshold) {
-                                // std::cout << "-------------------------" << std::endl;
+                   
                                 ids2[i][0] = index;
                                 ids2[i][1] = -2;
                             }
@@ -1794,8 +1824,8 @@ std::vector<std::map<int, std::vector<float>>> compare(
             }
         }
 
-
-
+     
+        std::cout << "==============================" << std::endl;
 
 
 
@@ -1829,6 +1859,8 @@ std::vector<std::map<int, std::vector<float>>> compare(
 
     }
     else {
+        
+
         ids2 = generateIds(unique_ids2);
 
         int addition = 1;
@@ -1979,31 +2011,32 @@ std::vector<std::map<int, std::vector<float>>> compare(
                 vector <float> x;
 
                 for (int g=0; g< 4; ++g){
-                    int each = static_cast<int>(std::round(results1.at<float>(i, g)));
+                    int each = static_cast<int>(std::round(results1[i][g]));
                     x.push_back(each);
                 }
 
                 cv::Mat detected1 = image1(cv::Rect(x[0], x[1], x[2] - x[0], x[3] - x[1]));
 
-                float class_id1 = results1.at<float>(i, 5);
+                float class_id1 = results1[i][5];
 
                 int index = -1;
-                float min_score = 1000000.0;
+                float min_score = 200.0;
 
                 for (size_t j = 0; j < ids2.size(); ++j) {
                     if (ids2[j][1] == -1) {
                         // std::cout << "------------" << std::endl;
                         vector <float> x2;
                         for (int k=0; k< 4; ++k){
-                            int each2 = static_cast<int>(std::round(results2.at<float>(j, k)));
+                            int each2 = static_cast<int>(std::round(results2[j][k]));
                             x2.push_back(each2);
                         }
 
                         cv::Mat detected2 = image2(cv::Rect(x2[0], x2[1], x2[2] - x2[0], x2[3] - x2[1]));
 
-                        float class_id2 = results2.at<float>(j, 5);
-
-                        std::vector<cv::Mat> l1l4 = calculateSVD(detected1);
+                        float class_id2 = results2[j][5];
+                        cv::Mat ds_detected1;
+                        cv::resize(detected1, ds_detected1, cv::Size(30, 30));
+                        std::vector<cv::Mat> l1l4 = calculateSVD(ds_detected1);
 
                     //    for (size_t i = 0; i < l1l4.size(); ++i) {
                     //         std::cout << "Matrix " << i << ":" << std::endl;
@@ -2014,7 +2047,9 @@ std::vector<std::map<int, std::vector<float>>> compare(
                         
 
                         if (class_id1 == class_id2){
-                            std::vector<cv::Mat> c1c4 = calculateSVD(detected2);
+                            cv::Mat ds_detected2;
+                            cv::resize(detected2, ds_detected2, cv::Size(30, 30));
+                            std::vector<cv::Mat> c1c4 = calculateSVD(ds_detected2);
 
                                 //it is correct now for both l1l4 and c1c4
 
@@ -2066,38 +2101,42 @@ std::vector<std::map<int, std::vector<float>>> compare(
 
 
 
-        // // Iterate through the map and print the key-value pairs
-        // for (const auto& entry : ids1) {
-        //     int key = entry.first;
-        //     const std::vector<float>& values = entry.second;
-
-        //     std::cout << "Key: " << key << ", Values: ";
-            
-        //     for (float value : values) {
-        //         std::cout << value << " ";
-        //     }
-
-        //     std::cout << std::endl;
-        // }    
-
-        // // Iterate through the map and print the key-value pairs
-        // for (const auto& entry : ids2) {
-        //     int key = entry.first;
-        //     const std::vector<float>& values = entry.second;
-
-        //     std::cout << "Key: " << key << ", Values: ";
-            
-        //     for (float value : values) {
-        //         std::cout << value << " ";
-        //     }
-
-        //     std::cout << std::endl;
-        // }    
-
+ 
 
 
     }
 
+
+    // // Iterate through the map and print the key-value pairs
+    // for (const auto& entry : ids1) {
+    //     int key = entry.first;
+    //     const std::vector<float>& values = entry.second;
+
+    //     std::cout << "Key: " << key << ", Values: ";
+        
+    //     for (float value : values) {
+    //         std::cout << value << " ";
+    //     }
+
+    //     std::cout << std::endl;
+    // }    
+
+    // // Iterate through the map and print the key-value pairs
+    // for (const auto& entry : ids2) {
+    //     int key = entry.first;
+    //     const std::vector<float>& values = entry.second;
+
+    //     std::cout << "Key: " << key << ", Values: ";
+        
+    //     for (float value : values) {
+    //         std::cout << value << " ";
+    //     }
+
+    //     std::cout << std::endl;
+    // }    
+
+    result.push_back(ids1);
+    result.push_back(ids2);
 
     return result;
 
@@ -2125,12 +2164,12 @@ std::vector<std::string> coco_names = {
   std::unique_ptr<tflite::FlatBufferModel> model =
       tflite::FlatBufferModel::BuildFromFile("yolov8l_integer_quant.tflite");
   
-  // auto ext_delegate_option = TfLiteExternalDelegateOptionsDefault("/usr/lib/libvx_delegate.so");
-  // auto ext_delegate_ptr = TfLiteExternalDelegateCreate(&ext_delegate_option);
+  auto ext_delegate_option = TfLiteExternalDelegateOptionsDefault("/usr/lib/libvx_delegate.so");
+  auto ext_delegate_ptr = TfLiteExternalDelegateCreate(&ext_delegate_option);
   tflite::ops::builtin::BuiltinOpResolver resolver;
   std::unique_ptr<tflite::Interpreter> interpreter;
   tflite::InterpreterBuilder(*model, resolver)(&interpreter);
-  // interpreter->ModifyGraphWithDelegate(ext_delegate_ptr);
+  interpreter->ModifyGraphWithDelegate(ext_delegate_ptr);
   interpreter->SetAllowFp16PrecisionForFp32(false);
   interpreter->AllocateTensors();
 
@@ -2170,19 +2209,16 @@ std::vector<std::string> coco_names = {
 
   std::vector<std::vector<float>> results1 = process_4(interpreter,"", "./result0.jpg", nmsrec1, pick1, ids1,  &img1_mat);
 
-  plotBboxes("./image0frame937.jpg", results1, coco_names, "./output.jpg");
+  // plotBboxes("./image0frame937.jpg", results1, coco_names, "./output.jpg");
 
-  int rows1=results1.size();
-  int cols1=results1[0].size();
-  cv::Mat mat1(rows1, cols1, CV_32F); // Create a CV_32F (float) matrix.
+  std::chrono::time_point<std::chrono::system_clock> start1, end1;
+  std::chrono::duration<double> elapsed_seconds1;
+  start1 = std::chrono::system_clock::now();
+  std::vector<std::vector<float>> output_id1=output_id("./image0frame937.jpg", results1);
+  end1 = std::chrono::system_clock::now();
 
-  for (int i = 0; i < rows1; i++) {
-      for (int j = 0; j < cols1; j++) {
-          mat1.at<float>(i, j) = results1[i][j];
-      }
-  }
-  std::vector<std::vector<float>> output_id1=output_id("./image0frame937.jpg", mat1);
-
+  elapsed_seconds1 = end1 - start1;
+  printf("output id s: %.10f\n", elapsed_seconds1.count());
   // for (const std::vector<float>& inner_vector : output_id1) {
   //     // Iterate through the inner vector and print each element
   //     for (float value : inner_vector) {
@@ -2194,20 +2230,11 @@ std::vector<std::string> coco_names = {
   std::vector<std::vector<float>> results2 = process_4(interpreter,"", "./result1.jpg", nmsrec2, pick2, ids2,  &img2_mat);
 
 
-  plotBboxes("./image0frame900.jpg", results2, coco_names, "./output2.jpg");
+  // plotBboxes("./image0frame900.jpg", results2, coco_names, "./output2.jpg");
 
-  int rows2=results2.size();
-  int cols2=results2[0].size();
-  cv::Mat mat2(rows2, cols2, CV_32F); // Create a CV_32F (float) matrix.
+  std::vector<std::vector<float>> output_id2=output_id("./image0frame900.jpg", results2);
 
-  for (int i = 0; i < rows2; i++) {
-      for (int j = 0; j < cols2; j++) {
-          mat2.at<float>(i, j) = results2[i][j];
-      }
-  }
-  std::vector<std::vector<float>> output_id2=output_id("./image0frame900.jpg", mat2);
-
-  // for (const std::vector<float>& inner_vector : output_id1) {
+  // for (const std::vector<float>& inner_vector : output_id2) {
   //     // Iterate through the inner vector and print each element
   //     for (float value : inner_vector) {
   //         std::cout << value << " ";
@@ -2215,19 +2242,58 @@ std::vector<std::string> coco_names = {
   //     std::cout << std::endl;  // Print a newline after each inner vector
   // }
 
+
+  // for (const std::vector<float>& row :results1) {
+  //   // Iterate through the elements in each row (inner vector)
+  //   for (float element : row) {
+  //       std::cout << element << ' ';
+  //   }
+  //   std::cout << std::endl; // Print a newline after each row
+  // }
+
+  // std::cout << "=====" << std::endl;  
+
+  // for (const std::vector<float>& row :results2) {
+  //   // Iterate through the elements in each row (inner vector)
+  //   for (float element : row) {
+  //       std::cout << element << ' ';
+  //   }
+  //   std::cout << std::endl; // Print a newline after each row
+  // }
+  // std::cout << "=====" << std::endl; 
+
+  for (const std::vector<float>& row :output_id1) {
+    // Iterate through the elements in each row (inner vector)
+    for (float element : row) {
+        std::cout << element << ' ';
+    }
+    std::cout << std::endl; // Print a newline after each row
+  }
+
+  std::cout << "=====" << std::endl;  
+
+  for (const std::vector<float>& row :output_id2) {
+    // Iterate through the elements in each row (inner vector)
+    for (float element : row) {
+        std::cout << element << ' ';
+    }
+    std::cout << std::endl; // Print a newline after each row
+  }
+
   //this part cannot stop running, will test on monday**************
-  // std::chrono::time_point<std::chrono::system_clock> start2, end2;
-  // std::chrono::duration<double> elapsed_seconds2;
-  // start2 = std::chrono::system_clock::now();
+  std::chrono::time_point<std::chrono::system_clock> start2, end2;
+  std::chrono::duration<double> elapsed_seconds2;
+  start2 = std::chrono::system_clock::now();
 
-  // std::vector<std::map<int, std::vector<float>>> compare_result=compare(
-  //     "./image0frame900.jpg", mat1,output_id1,
-  //     "./image0frame900.jpg", mat2,output_id2
-  // );
-  // end2 = std::chrono::system_clock::now();
+  std::vector<std::map<int, std::vector<float>>> compare_result=compare(
+      "./image0frame937.jpg", results1,output_id1,
+      "./image0frame900.jpg", results2,output_id2
+  );
+ 
+  end2 = std::chrono::system_clock::now();
 
-  // elapsed_seconds2 = end2 - start2;
-  // printf("invoke interpreter s: %.10f\n", elapsed_seconds2.count());
+  elapsed_seconds2 = end2 - start2;
+  printf("tracking interpreter s: %.10f\n", elapsed_seconds2.count());
 
   // for (const auto& map_item : compare_result) {
   //     for (const auto& pair : map_item) {
@@ -2239,6 +2305,35 @@ std::vector<std::string> coco_names = {
   //         std::cout << std::endl;
   //     }
   // }
+  
+  for (const auto& pair : compare_result[0]) {
+      int key = pair.first;
+      const std::vector<float>& values = pair.second;
+
+      std::cout << "Key: " << key << ", Values: ";
+      for (const float& value : values) {
+          std::cout << value << " ";
+      }
+      std::cout << std::endl;
+  }
+
+  for (const auto& pair : compare_result[1]) {
+      int key = pair.first;
+      const std::vector<float>& values = pair.second;
+
+      std::cout << "Key: " << key << ", Values: ";
+      for (const float& value : values) {
+          std::cout << value << " ";
+      }
+      std::cout << std::endl;
+  }
+
+  // std::vector<int> compare_result1;
+  // std::vector<int> compare_result2;
+
+
+  plotBboxes("./image0frame937.jpg", results1, coco_names, "./output.jpg",compare_result[0]);
+  plotBboxes("./image0frame900.jpg", results2, coco_names, "./output2.jpg",compare_result[1]);
 
   return 0;
 
