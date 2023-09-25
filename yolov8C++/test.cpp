@@ -1700,33 +1700,33 @@ std::vector<std::map<int, std::vector<float>>> compare(
         }
 
 
-        // Iterate through the map and print the key-value pairs
-        for (const auto& entry : ids1) {
-            int key = entry.first;
-            const std::vector<float>& values = entry.second;
+        // // Iterate through the map and print the key-value pairs
+        // for (const auto& entry : ids1) {
+        //     int key = entry.first;
+        //     const std::vector<float>& values = entry.second;
 
-            std::cout << "Key: " << key << ", Values: ";
+        //     std::cout << "Key: " << key << ", Values: ";
             
-            for (float value : values) {
-                std::cout << value << " ";
-            }
+        //     for (float value : values) {
+        //         std::cout << value << " ";
+        //     }
 
-            std::cout << std::endl;
-        }    
+        //     std::cout << std::endl;
+        // }    
 
-        // Iterate through the map and print the key-value pairs
-        for (const auto& entry : ids2) {
-            int key = entry.first;
-            const std::vector<float>& values = entry.second;
+        // // Iterate through the map and print the key-value pairs
+        // for (const auto& entry : ids2) {
+        //     int key = entry.first;
+        //     const std::vector<float>& values = entry.second;
 
-            std::cout << "Key: " << key << ", Values: ";
+        //     std::cout << "Key: " << key << ", Values: ";
             
-            for (float value : values) {
-                std::cout << value << " ";
-            }
+        //     for (float value : values) {
+        //         std::cout << value << " ";
+        //     }
 
-            std::cout << std::endl;
-        }    
+        //     std::cout << std::endl;
+        // }    
 
         for (size_t i = 0; i < ids2.size(); ++i) {
             if (ids2[i][0] == -1) {
@@ -2103,7 +2103,7 @@ std::vector<std::map<int, std::vector<float>>> compare(
                                 // std::cout << "-------------------------" << std::endl;
                                 ids1[i][0] = index;
                                 ids1[i][1] = -2;
-                                ids1.push_back(min_score);
+                                ids1[i].push_back(min_score);
                             }
 
 
@@ -2219,11 +2219,13 @@ std::vector<std::string> coco_names = {
 
   std::cout << " Tensorflow Test " << endl;
 
-  // string imgf1= "image0frame40808.jpg";
-  // string imgf1 ="8880.jpg";
-  // string imgf1="image0frame37484.jpg";
-  string imgf1 ="image0frame937.jpg";
-  string imgf2 ="image0frame900.jpg";
+  
+  // string imgf1 ="image0frame937.jpg";
+  // string imgf2 ="image0frame900.jpg";
+
+  string imgf1 ="./0030.jpg";
+  string imgf2 ="./0060.jpg";
+
   if (argc == 3)
   {
     imgf1 = argv[1];
@@ -2258,7 +2260,7 @@ std::vector<std::string> coco_names = {
   std::chrono::time_point<std::chrono::system_clock> start1, end1;
   std::chrono::duration<double> elapsed_seconds1;
   start1 = std::chrono::system_clock::now();
-  std::vector<std::vector<float>> output_id1=output_id("./image0frame937.jpg", results1);
+  std::vector<std::vector<float>> output_id1=output_id(imgf1, results1);
   end1 = std::chrono::system_clock::now();
 
   elapsed_seconds1 = end1 - start1;
@@ -2276,7 +2278,7 @@ std::vector<std::string> coco_names = {
 
   // plotBboxes("./image0frame900.jpg", results2, coco_names, "./output2.jpg");
 
-  std::vector<std::vector<float>> output_id2=output_id("./image0frame900.jpg", results2);
+  std::vector<std::vector<float>> output_id2=output_id(imgf2, results2);
 
   // for (const std::vector<float>& inner_vector : output_id2) {
   //     // Iterate through the inner vector and print each element
@@ -2306,23 +2308,23 @@ std::vector<std::string> coco_names = {
   // }
   // std::cout << "=====" << std::endl; 
 
-  for (const std::vector<float>& row :output_id1) {
-    // Iterate through the elements in each row (inner vector)
-    for (float element : row) {
-        std::cout << element << ' ';
-    }
-    std::cout << std::endl; // Print a newline after each row
-  }
+  // for (const std::vector<float>& row :output_id1) {
+  //   // Iterate through the elements in each row (inner vector)
+  //   for (float element : row) {
+  //       std::cout << element << ' ';
+  //   }
+  //   std::cout << std::endl; // Print a newline after each row
+  // }
 
-  std::cout << "=====" << std::endl;  
+  // std::cout << "=====" << std::endl;  
 
-  for (const std::vector<float>& row :output_id2) {
-    // Iterate through the elements in each row (inner vector)
-    for (float element : row) {
-        std::cout << element << ' ';
-    }
-    std::cout << std::endl; // Print a newline after each row
-  }
+  // for (const std::vector<float>& row :output_id2) {
+  //   // Iterate through the elements in each row (inner vector)
+  //   for (float element : row) {
+  //       std::cout << element << ' ';
+  //   }
+  //   std::cout << std::endl; // Print a newline after each row
+  // }
 
   //this part cannot stop running, will test on monday**************
   std::chrono::time_point<std::chrono::system_clock> start2, end2;
@@ -2330,8 +2332,8 @@ std::vector<std::string> coco_names = {
   start2 = std::chrono::system_clock::now();
 
   std::vector<std::map<int, std::vector<float>>> compare_result=compare(
-      "./image0frame937.jpg", results1,output_id1,
-      "./image0frame900.jpg", results2,output_id2
+      imgf1, results1,output_id1,
+      imgf2, results2,output_id2
   );
  
   end2 = std::chrono::system_clock::now();
@@ -2376,8 +2378,8 @@ std::vector<std::string> coco_names = {
   // std::vector<int> compare_result2;
 
 
-  plotBboxes("./image0frame937.jpg", results1, coco_names, "./output.jpg",compare_result[0]);
-  plotBboxes("./image0frame900.jpg", results2, coco_names, "./output2.jpg",compare_result[1]);
+  plotBboxes(imgf1, results1, coco_names, "./output.jpg",compare_result[0]);
+  plotBboxes(imgf2, results2, coco_names, "./output2.jpg",compare_result[1]);
 
   return 0;
 
