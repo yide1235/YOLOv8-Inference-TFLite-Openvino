@@ -764,7 +764,7 @@ std::vector<std::vector<float>> process_4(const std::unique_ptr<tflite::Interpre
         assert(box_afternms.size()==confidence_afternms.size());
 
         
-        std::cout << box_afternms.size() << std::endl;
+        // std::cout << box_afternms.size() << std::endl;
         for(int f=0;f<box_afternms.size();f++){
           vector<float> temp6;
           temp6.push_back(box_afternms[f][0]);
@@ -1699,8 +1699,6 @@ std::vector<std::map<int, std::vector<float>>> compare(
             }
         }
 
-        // std::cout << "-------------------------" << std::endl;
-        std::cout << "==============================" << std::endl;
 
         // Iterate through the map and print the key-value pairs
         for (const auto& entry : ids1) {
@@ -1799,7 +1797,7 @@ std::vector<std::map<int, std::vector<float>>> compare(
                             // std::cout << l1l4[0].size() << std::endl;
 
                             float ms = get_score(l1,l2,l3,l4,c1,c2,c3,c4);
-                            std::cout << ms<< std::endl;
+                            // std::cout << ms<< std::endl;
                             if (ms < min_score) {
                                 min_score = ms;
                                 index = j;
@@ -1810,6 +1808,7 @@ std::vector<std::map<int, std::vector<float>>> compare(
                    
                                 ids2[i][0] = index;
                                 ids2[i][1] = -2;
+                                ids2[i].push_back(min_score);
                             }
 
 
@@ -1824,8 +1823,30 @@ std::vector<std::map<int, std::vector<float>>> compare(
             }
         }
 
+        //now delete duplicate ones
+        for(int q=0;q< ids2.size(); q++){
+          if(ids2[q][1]==-2){
+            int min_index=q;
+            int goal=ids2[q][0];
+            for(int p=q+1;p<ids2.size(); p++){
+              if(ids2[p][1]==-2 && ids2[p][0]==ids2[q][0]){
+                if(ids2[q][3]<=ids2[p][3]){
+                  ids2[p][0]=ids2.size()+addition+1;
+                  addition++;
+                  min_index=q;
+                }else{
+                  ids2[q][0]=ids2.size()+addition+1;
+                  addition++;
+                  min_index=p;
+                }
+              }
+            }
+            ids2[min_index][0]=goal;
+          }
+        }
+
      
-        std::cout << "==============================" << std::endl;
+        // std::cout << "==============================" << std::endl;
 
 
 
@@ -2071,7 +2092,7 @@ std::vector<std::map<int, std::vector<float>>> compare(
                             // std::cout << l1l4[0].size() << std::endl;
 
                             float ms = get_score(l1,l2,l3,l4,c1,c2,c3,c4);
-                            std::cout << ms<< std::endl;
+                            // std::cout << ms<< std::endl;
                             if (ms < min_score) {
                                 min_score = ms;
                                 index = j;
@@ -2082,6 +2103,7 @@ std::vector<std::map<int, std::vector<float>>> compare(
                                 // std::cout << "-------------------------" << std::endl;
                                 ids1[i][0] = index;
                                 ids1[i][1] = -2;
+                                ids1.push_back(min_score);
                             }
 
 
@@ -2094,6 +2116,28 @@ std::vector<std::map<int, std::vector<float>>> compare(
                     }
                 }
             }
+        }
+
+        //delete duplicate after svd
+        for(int q=0;q< ids1.size(); q++){
+          if(ids1[q][1]==-2){
+            int min_index=q;
+            int goal=ids1[q][0];
+            for(int p=q+1;p<ids1.size(); p++){
+              if(ids1[p][1]==-2 && ids1[p][0]==ids1[q][0]){
+                if(ids1[q][3]<=ids1[p][3]){
+                  ids1[p][0]=ids1.size()+addition+1;
+                  addition++;
+                  min_index=q;
+                }else{
+                  ids1[q][0]=ids1.size()+addition+1;
+                  addition++;
+                  min_index=p;
+                }
+              }
+            }
+            ids1[min_index][0]=goal;
+          }
         }
 
 
