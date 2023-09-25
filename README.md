@@ -3,8 +3,9 @@
 
 
 ### Phase:
-currently make yolov8l tracking integrated with quantized tflite pretrain(finished)
-then converst everythiong to C++ to achieve faster speed
+//first experiments tracking algorithm in python
+//then converts it in C++
+//integerated with video and motion detection
 
 ### Features
 - Object Tracks
@@ -36,7 +37,7 @@ Initial result using yolov8l quantized tflite pretrain model for stereo images(t
 
 
 ### C++run command figure out:
-
+//help running command
 //my part dont need tflite
 //$ g++ -I../tensorflow -ltensorflow_cc -c test.cpp `pkg-config --cflags --libs opencv4`
 
@@ -44,7 +45,3 @@ Initial result using yolov8l quantized tflite pretrain model for stereo images(t
 //$ g++ -I../tensorflow -ltensorflow_cc -c test.o `pkg-config --cflags --libs 
 opencv4`
 
-
-//will only use opencv for the tracking part
-
-//working on the rest part
