@@ -1087,8 +1087,9 @@ void plotBboxes(const std::string& imgPath, const std::vector<std::vector<float>
         }
         // std::cout << trackingid << std::endl;
         // Include tracking ID, class name, and confidence in the label
-        std::string label = clsName + " " + std::to_string(trackingid) + " " + std::to_string(confidence);
+        // std::string label = clsName + " " + std::to_string(trackingid) + " " + std::to_string(confidence);
         // std::string label = clsName + " "  + std::to_string(confidence);
+        std::string label = clsName + " " + std::to_string(trackingid);
         cv::Scalar color = getColor(clsId, true);
 
         im0 = plotOneBox(bbox, im0, color, label);
@@ -1388,10 +1389,6 @@ std::vector<std::vector<float>> output_id(const std::string& img_path, const std
     return unique_ids;
 
 }
-
-
-
-
 
 
 
@@ -1995,8 +1992,7 @@ std::vector<std::map<int, std::vector<float>>> compare(
             }
         }
 
-        // std::cout << "111111111111111111111" << std::endl;
-
+        
 
         // // Iterate through the map and print the key-value pairs
         // for (const auto& entry : ids1) {
@@ -2185,6 +2181,132 @@ std::vector<std::map<int, std::vector<float>>> compare(
     return result;
 
 }
+
+
+std::vector<int> motion_detection_pair(const std::vector<vector<float>>& results1, const std::map<int, std::vector<float>>& ids1,
+const std::vector<vector<float>>& results2, const std::map<int, std::vector<float>>& ids2, int move_threshold, float ratio_threshold){
+
+  std::vector<int> results;
+
+  assert(results1.size()==ids1.size());
+  assert(results2.size()==ids2.size());
+
+  if(results1.size()>results2.size()){
+    //ids1 is the longer one with [0] euqal to index
+    //then traverse ids2
+    // Traverse the map using a range-based for loop
+    for(int i=0;i< results2.size(); i++){
+      auto it= ids2.find(i);
+      if(it!=ids2.end()){
+        const std::vector<float>& values = it->second;//i is the index at ids2
+        int corresp=static_cast<int>(values[0]);//corresp is the index at ids1
+
+        //now the index is i and corresp, compare the size
+        bool moved=false;
+        if(corresp!=-1){
+          std::vector<float> i_box;//ids2
+          std::vector<float> corresp_box;//ids1
+
+          for(int m=0;m<4;m++){
+            int each2=static_cast<int>(std::round(results2[i][m]));
+            i_box.push_back(each2);
+          }
+
+          for(int m=0;m<4;m++){
+            int each2=static_cast<int>(std::round(results1[corresp][m]));
+            corresp_box.push_back(each2);
+          }
+
+          //check moved
+          int i_x_mid=static_cast<int>(std::round(i_box[2]-i_box[0])/2)+i_box[0];
+          int i_y_mid=static_cast<int>(std::round(i_box[3]-i_box[1])/2)+i_box[1];
+
+          int corresp_x_mid=static_cast<int>(std::round(corresp_box[2]-corresp_box[0])/2)+corresp_box[0];
+          int corresp_y_mid=static_cast<int>(std::round(corresp_box[3]-corresp_box[1])/2)+corresp_box[1];
+
+          
+          float i_ratio=(i_box[2]-i_box[0])/(i_box[3]-i_box[1]);
+
+          float corresp_ratio=(corresp_box[2]-corresp_box[0])/(corresp_box[3]-corresp_box[1]);
+
+          if((i_ratio/corresp_ratio>ratio_threshold)&&((std::abs(corresp_x_mid-i_x_mid)>move_threshold)||(std::abs(corresp_y_mid-i_y_mid)>move_threshold))){
+            moved=true;
+          }
+          // std::cout << std::abs((i_box[2]-i_box[0])*(i_box[3]-i_box[1])) << std::abs((corresp_box[2]-corresp_box[0])*(corresp_box[3]-corresp_box[1])) << std::endl;
+          // assert(1==0);
+          if((0.7> std::abs(std::abs((i_box[2]-i_box[0])*(i_box[3]-i_box[1]))/std::abs((corresp_box[2]-corresp_box[0])*(corresp_box[3]-corresp_box[1]))))||
+          (1.3< std::abs(std::abs((i_box[2]-i_box[0])*(i_box[3]-i_box[1]))/std::abs((corresp_box[2]-corresp_box[0])*(corresp_box[3]-corresp_box[1]))))){
+            moved=false;
+          }
+          std::cout << "class is: "<< " " << corresp << " " << std::abs(corresp_x_mid-i_x_mid) << " " << std::abs(corresp_y_mid-i_y_mid) << " " << i_ratio/corresp_ratio << " "<< std::abs(std::abs((i_box[2]-i_box[0])*(i_box[3]-i_box[1]))/std::abs((corresp_box[2]-corresp_box[0])*(corresp_box[3]-corresp_box[1]))) << std::endl;
+        }
+
+        if(moved){
+          results.push_back(corresp);//i is the same with corresp
+        }
+      }
+    }
+
+  }else{
+    //ids2 is [i]==index
+    //travers ids1
+
+    for(int i=0;i< results1.size(); i++){
+      auto it= ids1.find(i);
+      if(it!=ids1.end()){
+        const std::vector<float>& values = it->second;//i is the index at ids1
+        int corresp=static_cast<int>(values[0]);//corresp is the index at ids2
+
+        //now the index is i and corresp, compare the size
+        bool moved=false;
+        if(corresp!=-1){
+          std::vector<float> i_box;//ids1
+          std::vector<float> corresp_box;//ids2
+
+          for(int m=0;m<4;m++){
+            int each2=static_cast<int>(std::round(results1[i][m]));
+            i_box.push_back(each2);
+          }
+
+          for(int m=0;m<4;m++){
+            int each2=static_cast<int>(std::round(results2[corresp][m]));
+            corresp_box.push_back(each2);
+          }
+
+          //check moved
+          int i_x_mid=static_cast<int>(std::round(i_box[2]-i_box[0])/2)+i_box[0];
+          int i_y_mid=static_cast<int>(std::round(i_box[3]-i_box[1])/2)+i_box[1];
+
+          int corresp_x_mid=static_cast<int>(std::round(corresp_box[2]-corresp_box[0])/2)+corresp_box[0];
+          int corresp_y_mid=static_cast<int>(std::round(corresp_box[3]-corresp_box[1])/2)+corresp_box[1];
+
+
+          float i_ratio=(i_box[2]-i_box[0])/(i_box[3]-i_box[1]);
+
+          float corresp_ratio=(corresp_box[2]-corresp_box[0])/(corresp_box[3]-corresp_box[1]);
+
+          if((i_ratio/corresp_ratio>ratio_threshold)&& ((std::abs(corresp_x_mid-i_x_mid)>move_threshold)||(std::abs(corresp_y_mid-i_y_mid)>move_threshold))){
+            moved=true;
+          }
+          if((0.7> std::abs(std::abs((i_box[2]-i_box[0])*(i_box[3]-i_box[1]))/std::abs((corresp_box[2]-corresp_box[0])*(corresp_box[3]-corresp_box[1]))))||
+          (1.3< std::abs(std::abs((i_box[2]-i_box[0])*(i_box[3]-i_box[1]))/std::abs((corresp_box[2]-corresp_box[0])*(corresp_box[3]-corresp_box[1]))))){
+            moved=false;
+          }
+          std::cout << "class is: "<< " " << corresp << " " << std::abs(corresp_x_mid-i_x_mid) << " " << std::abs(corresp_y_mid-i_y_mid) << " " << i_ratio/corresp_ratio << " "<< std::abs(std::abs((i_box[2]-i_box[0])*(i_box[3]-i_box[1]))/std::abs((corresp_box[2]-corresp_box[0])*(corresp_box[3]-corresp_box[1]))) << std::endl;
+        }
+
+        if(moved){
+          results.push_back(corresp);//i is the same with corresp
+        }
+
+
+      }
+    }
+  }
+  return results;
+ 
+}
+
 
 
 
@@ -2381,7 +2503,15 @@ std::vector<std::string> coco_names = {
   plotBboxes(imgf1, results1, coco_names, "./output.jpg",compare_result[0]);
   plotBboxes(imgf2, results2, coco_names, "./output2.jpg",compare_result[1]);
 
+  std::vector<int> moved_list=motion_detection_pair(results1, compare_result[0], results2, compare_result[1], 80, 0.8);
+
+  for(int i=0;i<moved_list.size();i++){
+    std::cout << moved_list[i] << std::endl;
+  }
+
+
   return 0;
 
 
 }
+
