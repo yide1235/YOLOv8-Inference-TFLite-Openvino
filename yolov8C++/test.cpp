@@ -65,8 +65,8 @@
 
 #include "tensorflow/lite/c/common.h"
 #include "tensorflow/lite/tools/logging.h"
-
-
+//one library i added
+#include <cmath>
 
 using namespace std;
 using namespace cv;
@@ -433,7 +433,7 @@ std::vector<int> NMS(const std::vector<std::vector<float>>& boxes, float overlap
 
 
 
-std::vector<std::vector<float>> process_4(const std::unique_ptr<tflite::Interpreter>& interpreter,const string& infile, string outfile, vector<Rect> &nmsrec, vector<int> &pick, vector<int> &ids, cv::Mat *inp = NULL)
+std::vector<std::vector<float>> process_4(const std::unique_ptr<tflite::Interpreter>& interpreter,const cv::Mat& img)
 {
 
 
@@ -458,17 +458,12 @@ std::vector<std::vector<float>> process_4(const std::unique_ptr<tflite::Interpre
   std::chrono::duration<double> elapsed_seconds;
   start = std::chrono::system_clock::now();
 
-  cv::Mat img;
-  if (inp == NULL)
-  {
-    cout << "Getting image from file " << endl;
-    img = cv::imread(infile);
-  }
-  else
-  {
-    cout << "Getting image from input " << endl;
-    img = *inp;
-  }
+  // cv::Mat img = cv::imread(infile);
+  //   if (img.empty()) {
+  //       std::cerr << "Failed to load image." << std::endl;
+  //       // You should return an empty cv::Mat or handle errors differently.
+  //       return cv::Mat();
+  //   }
 
   const float width=img.rows;
   const float height=img.cols;
@@ -619,7 +614,7 @@ std::vector<std::vector<float>> process_4(const std::unique_ptr<tflite::Interpre
 
 
     while (n < 80) {
-      if (box_vec[n * 8400 + m + base] >= 0.25) {
+      if (box_vec[n * 8400 + m + base] >= 0.30) {
         index.push_back(n);
         confidence.push_back(box_vec[n * 8400 + m + base]);
 
@@ -992,36 +987,37 @@ std::vector<std::vector<float>> process_4(const std::unique_ptr<tflite::Interpre
 
 
 
-char *read_image(string image_name, int &filesize)
-{
-  cout << "Reading image " << endl;
-  std::ifstream file(image_name, ios::binary);
-  file.seekg(0, std::ios::end);
-  filesize = (int)file.tellg();
-  file.seekg(0);
-  char *output = new char[filesize];
-  file.read(output, filesize);
-  cout << "IMAGE SIZE IS " << filesize << endl;
-  return output;
-}
+// char *read_image(string image_name, int &filesize)
+// {
+//   cout << "Reading image " << endl;
+//   std::ifstream file(image_name, ios::binary);
+//   file.seekg(0, std::ios::end);
+//   filesize = (int)file.tellg();
+//   file.seekg(0);
+//   char *output = new char[filesize];
+//   file.read(output, filesize);
+//   cout << "IMAGE SIZE IS " << filesize << endl;
+//   return output;
+// }
 
-cv::Mat convert_image(char *img, int height, int width, int filesize)
-{
+// cv::Mat convert_image(char *img,  int filesize)
+// {
 
-  // cv::Mat raw_data;
+//   // cv::Mat raw_data;
 
-  // raw_data = cv::imdecode(cv::Mat(1, filesize, CV_8UC1, img), IMREAD_UNCHANGED);
-  // cv::Mat raw_data(1,filesize,CV_8UC3,img,cv::Mat::AUTO_STEP);
-  // cout << " Got raw data " << raw_data.cols << " rows " << raw_data.rows << endl;
-  // cv::Mat result = cv::imdecode(raw_data,IMREAD_UNCHANGED);
-  // cout << "Decoded the matrix " << decoded_mat.cols << " rows are " << decoded_mat.rows << endl;
-  // return decoded_mat;
-  // return result;
-  cv::Mat mat_img;
+//   // raw_data = cv::imdecode(cv::Mat(1, filesize, CV_8UC1, img), IMREAD_UNCHANGED);
+//   // cv::Mat raw_data(1,filesize,CV_8UC3,img,cv::Mat::AUTO_STEP);
+//   // cout << " Got raw data " << raw_data.cols << " rows " << raw_data.rows << endl;
+//   // cv::Mat result = cv::imdecode(raw_data,IMREAD_UNCHANGED);
+//   // cout << "Decoded the matrix " << decoded_mat.cols << " rows are " << decoded_mat.rows << endl;
+//   // return decoded_mat;
+//   // return result;
+//   cv::Mat mat_img;
 
-  mat_img = cv::imdecode(cv::Mat(1, filesize, CV_8UC1, img), IMREAD_UNCHANGED);
-  return mat_img;
-}
+//   mat_img = cv::imdecode(cv::Mat(1, filesize, CV_8UC1, img), IMREAD_UNCHANGED);
+//   return mat_img;
+// }
+
 
 // /*cv::Mat get_mat(char* jpeg_img){
 //   cv::Mat rawData(1080, 1920, CV_8FC3, (void*)jpeg_img);
@@ -1044,26 +1040,34 @@ cv::Scalar getColor(int i, bool bgr = false) {
 }
 
 cv::Mat plotOneBox(const std::vector<float>& x, cv::Mat im, cv::Scalar color = cv::Scalar(128, 128, 128),
-                   const std::string& label = "", int lineThickness = 3) {
-    int tl = lineThickness ? std::max(round(0.002 * (im.rows + im.cols) / 2), 1.0) : 1; // line/font thickness
+                   const std::string& label = "", int rectLineThickness = 3, int textLineThickness = 2) {
     cv::Point c1(static_cast<int>(x[0]), static_cast<int>(x[1]));
     cv::Point c2(static_cast<int>(x[2]), static_cast<int>(x[3]));
-    cv::rectangle(im, c1, c2, color, tl, cv::LINE_AA);
+    
+    // Draw the rectangle with the specified line thickness
+    cv::rectangle(im, c1, c2, color, rectLineThickness, cv::LINE_AA);
+    
     if (!label.empty()) {
-        int tf = std::max(tl - 1, 1); // font thickness
-        cv::Size textSize = cv::getTextSize(label, 0, tl / 3, tf, nullptr);
+        int tf = std::max(textLineThickness, 1); // Font thickness
+        
+        cv::Size textSize = cv::getTextSize(label, 0, 1, tf, nullptr);
         c2 = cv::Point(c1.x + textSize.width, c1.y - textSize.height - 3);
-        cv::rectangle(im, c1, c2, color, -1, cv::LINE_AA); // filled
-        cv::putText(im, label, cv::Point(c1.x, c1.y - 2), 0, tl / 3, cv::Scalar(225, 255, 255), tf, cv::LINE_AA);
+        
+        // Draw the filled rectangle for the text background
+        cv::rectangle(im, c1, c2, color, -1, cv::LINE_AA);
+        
+        // Draw the text with the specified line thickness
+        cv::putText(im, label, cv::Point(c1.x, c1.y - 2), 0, 1, cv::Scalar(255, 255, 255), tf, cv::LINE_AA);
     }
+    
     return im;
 }
 
-void plotBboxes(const std::string& imgPath, const std::vector<std::vector<float>>& results,
+void plotBboxes(const cv::Mat& img, const std::vector<std::vector<float>>& results,
                 const std::vector<std::string>& coco_names, const std::string& savePath, 
                 const std::map<int, std::vector<float>>& trackingData) {
-    cv::Mat im0 = cv::imread(imgPath);
-    
+    // cv::Mat im0 = cv::imread(imgPath);
+    cv::Mat im0=img;
     for (int i = 0; i < results.size(); ++i) {
         const std::vector<float>& value = results[i];
         std::vector<float> bbox(value.begin(), value.begin() + 4);
@@ -1087,9 +1091,13 @@ void plotBboxes(const std::string& imgPath, const std::vector<std::vector<float>
         }
         // std::cout << trackingid << std::endl;
         // Include tracking ID, class name, and confidence in the label
-        // std::string label = clsName + " " + std::to_string(trackingid) + " " + std::to_string(confidence);
-        // std::string label = clsName + " "  + std::to_string(confidence);
-        std::string label = clsName + " " + std::to_string(trackingid);
+        
+        std::stringstream ss;
+        ss << std::fixed << std::setprecision(2) << confidence;
+        std::string formattedValue = ss.str();
+        std::string label = clsName + " " + std::to_string(trackingid) + " " + formattedValue;
+        
+
         cv::Scalar color = getColor(clsId, true);
 
         im0 = plotOneBox(bbox, im0, color, label);
@@ -1108,14 +1116,14 @@ void plotBboxes(const std::string& imgPath, const std::vector<std::vector<float>
 //./yolov8_integer_tracking
 
 //simply copy objects here
-std::vector<std::vector<float>> output_id(const std::string& img_path, const std::vector<std::vector<float>>& results){
+std::vector<std::vector<float>> output_id(const cv::Mat& img, const std::vector<std::vector<float>>& results){
 
-    cv::Mat img = cv::imread(img_path);
-    if (img.empty()) {
-        std::cerr << "Failed to load image." << std::endl;
-        // You should return an empty cv::Mat or handle errors differently.
-        return cv::Mat();
-    }
+    // cv::Mat img = cv::imread(img_path);
+    // if (img.empty()) {
+    //     std::cerr << "Failed to load image." << std::endl;
+    //     // You should return an empty cv::Mat or handle errors differently.
+    //     return cv::Mat();
+    // }
 
     //must assume detected image and results are not 0 in width and height
     std::vector<std::vector<float>> unique_ids;
@@ -1581,9 +1589,9 @@ std::vector<std::map<int, std::vector<float>>> compare(
     std::map<int, std::vector<float>> ids2;
     
     if (unique_ids1.size() > unique_ids2.size()) {
-        // std::cout << "-------------------------" << std::endl;
+
         ids1 = generateIds(unique_ids1);
-        // std::cout << "==============================" << std::endl;
+   
 
         int addition = 1;
 
@@ -1601,7 +1609,7 @@ std::vector<std::map<int, std::vector<float>>> compare(
         //     std::cout << std::endl;
         // }        
 
-        // std::cout << "-------------------------" << std::endl;
+       
         // Iterate through the vectors in unique_ids1
         for (size_t i = 0; i < unique_ids2.size(); ++i) {
             float min_norm2 = std::numeric_limits<float>::infinity();
@@ -1631,7 +1639,7 @@ std::vector<std::map<int, std::vector<float>>> compare(
             }
         }
 
-        // std::cout << "==============================" << std::endl;
+       
         // ids1[0][0]=3;
 
 
@@ -1663,9 +1671,7 @@ std::vector<std::map<int, std::vector<float>>> compare(
 
         //     std::cout << std::endl;
         // }    
-        // std::cout << "-------------------------" << std::endl;
-        
-        
+      
 
 
         for (auto it1 = ids2.begin(); it1 != ids2.end(); ++it1) {
@@ -2234,8 +2240,8 @@ const std::vector<vector<float>>& results2, const std::map<int, std::vector<floa
           }
           // std::cout << std::abs((i_box[2]-i_box[0])*(i_box[3]-i_box[1])) << std::abs((corresp_box[2]-corresp_box[0])*(corresp_box[3]-corresp_box[1])) << std::endl;
           // assert(1==0);
-          if((0.7> std::abs(std::abs((i_box[2]-i_box[0])*(i_box[3]-i_box[1]))/std::abs((corresp_box[2]-corresp_box[0])*(corresp_box[3]-corresp_box[1]))))||
-          (1.3< std::abs(std::abs((i_box[2]-i_box[0])*(i_box[3]-i_box[1]))/std::abs((corresp_box[2]-corresp_box[0])*(corresp_box[3]-corresp_box[1]))))){
+          if((0.75> std::abs(std::abs((i_box[2]-i_box[0])*(i_box[3]-i_box[1]))/std::abs((corresp_box[2]-corresp_box[0])*(corresp_box[3]-corresp_box[1]))))||
+          (1.25< std::abs(std::abs((i_box[2]-i_box[0])*(i_box[3]-i_box[1]))/std::abs((corresp_box[2]-corresp_box[0])*(corresp_box[3]-corresp_box[1]))))){
             moved=false;
           }
           std::cout << "class is: "<< " " << corresp << " " << std::abs(corresp_x_mid-i_x_mid) << " " << std::abs(corresp_y_mid-i_y_mid) << " " << i_ratio/corresp_ratio << " "<< std::abs(std::abs((i_box[2]-i_box[0])*(i_box[3]-i_box[1]))/std::abs((corresp_box[2]-corresp_box[0])*(corresp_box[3]-corresp_box[1]))) << std::endl;
@@ -2288,8 +2294,8 @@ const std::vector<vector<float>>& results2, const std::map<int, std::vector<floa
           if((i_ratio/corresp_ratio>ratio_threshold)&& ((std::abs(corresp_x_mid-i_x_mid)>move_threshold)||(std::abs(corresp_y_mid-i_y_mid)>move_threshold))){
             moved=true;
           }
-          if((0.7> std::abs(std::abs((i_box[2]-i_box[0])*(i_box[3]-i_box[1]))/std::abs((corresp_box[2]-corresp_box[0])*(corresp_box[3]-corresp_box[1]))))||
-          (1.3< std::abs(std::abs((i_box[2]-i_box[0])*(i_box[3]-i_box[1]))/std::abs((corresp_box[2]-corresp_box[0])*(corresp_box[3]-corresp_box[1]))))){
+          if((0.25> std::abs(std::abs((i_box[2]-i_box[0])*(i_box[3]-i_box[1]))/std::abs((corresp_box[2]-corresp_box[0])*(corresp_box[3]-corresp_box[1]))))||
+          (1.25< std::abs(std::abs((i_box[2]-i_box[0])*(i_box[3]-i_box[1]))/std::abs((corresp_box[2]-corresp_box[0])*(corresp_box[3]-corresp_box[1]))))){
             moved=false;
           }
           std::cout << "class is: "<< " " << corresp << " " << std::abs(corresp_x_mid-i_x_mid) << " " << std::abs(corresp_y_mid-i_y_mid) << " " << i_ratio/corresp_ratio << " "<< std::abs(std::abs((i_box[2]-i_box[0])*(i_box[3]-i_box[1]))/std::abs((corresp_box[2]-corresp_box[0])*(corresp_box[3]-corresp_box[1]))) << std::endl;
@@ -2306,6 +2312,8 @@ const std::vector<vector<float>>& results2, const std::map<int, std::vector<floa
   return results;
  
 }
+
+
 
 
 
@@ -2341,30 +2349,40 @@ std::vector<std::string> coco_names = {
 
   std::cout << " Tensorflow Test " << endl;
 
-  
-  // string imgf1 ="image0frame937.jpg";
-  // string imgf2 ="image0frame900.jpg";
+  // if (argc == 3)
+  // {
+  //   imgf1 = argv[1];
+  //   imgf2 = argv[2];
+  //   cout << imgf1 << " " << imgf2 << endl;
+  // }
+
+
 
   string imgf1 ="./0030.jpg";
   string imgf2 ="./0060.jpg";
 
-  if (argc == 3)
-  {
-    imgf1 = argv[1];
-    imgf2 = argv[2];
-    cout << imgf1 << " " << imgf2 << endl;
+  // string imgf1 ="./0960.png";
+  // string imgf2 ="./0961.png";
+
+  cv::Mat img1 = cv::imread(imgf1);
+  if (img1.empty()) {
+      std::cerr << "Failed to load image." << std::endl;
+      // You should return an empty cv::Mat or handle errors differently.
+      return 0;
   }
 
-  vector<Rect> nmsrec1, nmsrec2, nmsrec3;
-  vector<int> pick1, pick2, pick3;
-  vector<int> ids1, ids2, ids3;
-  vector<int> motion1, motion2, motion3;
+  cv::Mat img2 = cv::imread(imgf2);
+  if (img2.empty()) {
+      std::cerr << "Failed to load image." << std::endl;
+      // You should return an empty cv::Mat or handle errors differently.
+      return 0;
+  }
 
-  int filesize = 0;
-  char *img1 = read_image(imgf1, filesize);
-  cv::Mat img1_mat = convert_image(img1, 1080, 1920, filesize);
-  char *img2 = read_image(imgf2, filesize);
-  cv::Mat img2_mat = convert_image(img2, 1080, 1920, filesize);
+  // int filesize = 0;
+  // char *img1 = read_image(imgf1, filesize);
+  // cv::Mat img1_mat = convert_image(img1,  filesize);
+  // char *img2 = read_image(imgf2, filesize);
+  // cv::Mat img2_mat = convert_image(img2, filesize);
   // cv::Mat img1 = cv::imread("./0030.jpg");
   // cv::Mat img1 = cv::imread("./image0frame0.jpg");
   // cv::Mat img2 = cv::imread("./image0frame30.jpg");
@@ -2373,20 +2391,12 @@ std::vector<std::string> coco_names = {
   //   return -1;
   // }
 
-  // cv::Mat img1_mat = cv::imread("./009000.jpg");  
 
-  std::vector<std::vector<float>> results1 = process_4(interpreter,"", "./result0.jpg", nmsrec1, pick1, ids1,  &img1_mat);
+  std::vector<std::vector<float>> results1 = process_4(interpreter,img1);
 
-  // plotBboxes("./image0frame937.jpg", results1, coco_names, "./output.jpg");
-
-  std::chrono::time_point<std::chrono::system_clock> start1, end1;
-  std::chrono::duration<double> elapsed_seconds1;
-  start1 = std::chrono::system_clock::now();
-  std::vector<std::vector<float>> output_id1=output_id(imgf1, results1);
-  end1 = std::chrono::system_clock::now();
-
-  elapsed_seconds1 = end1 - start1;
-  printf("output id s: %.10f\n", elapsed_seconds1.count());
+ 
+  std::vector<std::vector<float>> output_id1=output_id(img1, results1);
+ 
   // for (const std::vector<float>& inner_vector : output_id1) {
   //     // Iterate through the inner vector and print each element
   //     for (float value : inner_vector) {
@@ -2395,60 +2405,14 @@ std::vector<std::string> coco_names = {
   //     std::cout << std::endl;  // Print a newline after each inner vector
   // }
 
-  std::vector<std::vector<float>> results2 = process_4(interpreter,"", "./result1.jpg", nmsrec2, pick2, ids2,  &img2_mat);
+  std::vector<std::vector<float>> results2 = process_4(interpreter,img2);
 
 
-  // plotBboxes("./image0frame900.jpg", results2, coco_names, "./output2.jpg");
-
-  std::vector<std::vector<float>> output_id2=output_id(imgf2, results2);
-
-  // for (const std::vector<float>& inner_vector : output_id2) {
-  //     // Iterate through the inner vector and print each element
-  //     for (float value : inner_vector) {
-  //         std::cout << value << " ";
-  //     }
-  //     std::cout << std::endl;  // Print a newline after each inner vector
-  // }
+  std::vector<std::vector<float>> output_id2=output_id(img2, results2);
 
 
-  // for (const std::vector<float>& row :results1) {
-  //   // Iterate through the elements in each row (inner vector)
-  //   for (float element : row) {
-  //       std::cout << element << ' ';
-  //   }
-  //   std::cout << std::endl; // Print a newline after each row
-  // }
 
-  // std::cout << "=====" << std::endl;  
-
-  // for (const std::vector<float>& row :results2) {
-  //   // Iterate through the elements in each row (inner vector)
-  //   for (float element : row) {
-  //       std::cout << element << ' ';
-  //   }
-  //   std::cout << std::endl; // Print a newline after each row
-  // }
-  // std::cout << "=====" << std::endl; 
-
-  // for (const std::vector<float>& row :output_id1) {
-  //   // Iterate through the elements in each row (inner vector)
-  //   for (float element : row) {
-  //       std::cout << element << ' ';
-  //   }
-  //   std::cout << std::endl; // Print a newline after each row
-  // }
-
-  // std::cout << "=====" << std::endl;  
-
-  // for (const std::vector<float>& row :output_id2) {
-  //   // Iterate through the elements in each row (inner vector)
-  //   for (float element : row) {
-  //       std::cout << element << ' ';
-  //   }
-  //   std::cout << std::endl; // Print a newline after each row
-  // }
-
-  //this part cannot stop running, will test on monday**************
+ 
   std::chrono::time_point<std::chrono::system_clock> start2, end2;
   std::chrono::duration<double> elapsed_seconds2;
   start2 = std::chrono::system_clock::now();
@@ -2496,14 +2460,11 @@ std::vector<std::string> coco_names = {
       std::cout << std::endl;
   }
 
-  // std::vector<int> compare_result1;
-  // std::vector<int> compare_result2;
 
-
-  plotBboxes(imgf1, results1, coco_names, "./output.jpg",compare_result[0]);
-  plotBboxes(imgf2, results2, coco_names, "./output2.jpg",compare_result[1]);
-
-  std::vector<int> moved_list=motion_detection_pair(results1, compare_result[0], results2, compare_result[1], 80, 0.8);
+  plotBboxes(img1, results1, coco_names, "./output.jpg",compare_result[0]);
+  plotBboxes(img2, results2, coco_names, "./output2.jpg",compare_result[1]);
+  std::vector<int> moved_list=motion_detection_pair(results1, compare_result[0], results2, compare_result[1], 80, 0.80);
+  // std::vector<int> moved_list=motion_detection_pair(results1, compare_result[0], results2, compare_result[1], 10, 0.70);
 
   for(int i=0;i<moved_list.size();i++){
     std::cout << moved_list[i] << std::endl;
@@ -2514,4 +2475,5 @@ std::vector<std::string> coco_names = {
 
 
 }
+
 
