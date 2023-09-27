@@ -6,6 +6,7 @@
 //first experiments tracking algorithm in python
 //then converts it in C++
 //integerated with video and motion detection
+//do frame1, frame2, then use frame2 id to do frame2 and frame3
 
 ### Features
 - Object Tracks
