@@ -699,11 +699,22 @@ std::vector<std::vector<float>> process_4(const std::unique_ptr<tflite::Interpre
 //simply copy objects here
 std::vector<std::vector<float>> output_id(const cv::Mat& img, const std::vector<std::vector<float>>& results){
 
+    // cv::Mat img = cv::imread(img_path);
+    // if (img.empty()) {
+    //     std::cerr << "Failed to load image." << std::endl;
+    //     // You should return an empty cv::Mat or handle errors differently.
+    //     return cv::Mat();
+    // }
+
     //must assume detected image and results are not 0 in width and height
     std::vector<std::vector<float>> unique_ids;
 
 
     int len_results=results.size();
+
+    // cv::Mat unique_ids= cv::Mat::zeros(len_results, 27, CV_32F);
+    //27 is ((10*(cls_id), b,g,r, confidence*100, x1/3,y1/3,x2/3,y2/3, b_detected/45, g_detected/45, r_detected/45))
+    // 1,6,6,6,1,4,3,   
 
     for (int i =0; i< len_results; ++i){
         int cls_id=results[i][5];
@@ -717,7 +728,17 @@ std::vector<std::vector<float>> output_id(const cv::Mat& img, const std::vector<
         }
 
         cv::Mat detected=img(cv::Rect(x[0], x[1], x[2] - x[0], x[3] - x[1]));
- 
+        // cv::namedWindow("Detected Region", cv::WINDOW_NORMAL);
+        // cv::imshow("Detected Region", detected);
+
+        // // Wait for a key press and then close the window
+        // cv::waitKey(0);
+        // cv::destroyAllWindows();
+
+        //detected.cols is height .shape[1]
+        //detected.rows is width  .shape[0]
+        // std::cout << detected.cols << std::endl;
+        // std::cout << detected.rows << std::endl;
 
         if (detected.rows == 0 || detected.cols == 0) {
             // Report an error or handle the case where either rows or cols is 0
@@ -818,6 +839,30 @@ std::vector<std::vector<float>> output_id(const cv::Mat& img, const std::vector<
         std::sort(r_var.begin(), r_var.end());
 
 
+        // // Printing b_var
+        // std::cout << "b_var: ";
+        // for (int i = 0; i < b_var.size(); ++i) {
+        //     std::cout << b_var[i] << " ";
+        // }
+        // std::cout << std::endl;
+
+        // // Printing g_var
+        // std::cout << "g_var: ";
+        // for (int i = 0; i < g_var.size(); ++i) {
+        //     std::cout << g_var[i] << " ";
+        // }
+        // std::cout << std::endl;
+
+        // // Printing r_var
+        // std::cout << "r_var: ";
+        // for (int i = 0; i < r_var.size(); ++i) {
+        //     std::cout << r_var[i] << " ";
+        // }
+        // std::cout << std::endl;
+
+
+        //so b_var, g_var, r_var is std::vector<int> b_var, g_var, r_var;
+
         // Calculate the maximum and minimum values for b, g, and r
         double b_max = *std::max_element(b_var.begin(), b_var.end());
         double b_min = *std::min_element(b_var.begin(), b_var.end());
@@ -885,37 +930,50 @@ std::vector<std::vector<float>> output_id(const cv::Mat& img, const std::vector<
         combinedData.push_back(static_cast<float>(cls_id*10));
 
         for (const int& value : b_var) {
-            combinedData.push_back(static_cast<float>(value)*5);
+            combinedData.push_back(static_cast<float>(value));
         }
         for (const int& value : g_var) {
-            combinedData.push_back(static_cast<float>(value)*5);
+            combinedData.push_back(static_cast<float>(value));
         }
         for (const int& value : r_var) {
-            combinedData.push_back(static_cast<float>(value)*5);
+            combinedData.push_back(static_cast<float>(value));
         }
 
-
         combinedData.push_back(confidence*100);
-
-
 
         combinedData.push_back(x[0]/3);
         combinedData.push_back(x[1]/3);
         combinedData.push_back(x[2]/3);
         combinedData.push_back(x[3]/3);
 
-        combinedData.push_back((x[2]-x[0])/(x[3]-x[1])*10);
-        combinedData.push_back((x[2]-x[0])*3);
-        combinedData.push_back((x[3]-x[1])*3);
+        // std::cout << b_detected.rows << std::endl;
+        // std::cout << b_detected.cols << std::endl;
 
         combinedData.push_back(static_cast<float>(b_stddev[0]*b_stddev[0]/45));
         combinedData.push_back(static_cast<float>(g_stddev[0]*g_stddev[0]/45));
         combinedData.push_back(static_cast<float>(r_stddev[0]*r_stddev[0]/45));
 
+        // std::cout << b_mean[0] << std::endl;
+        // std::cout << g_mean[0] << std::endl;
+        // std::cout << r_mean[0] << std::endl;
+
+
+        // std::cout << "combinedData: ";
+        // for (size_t i = 0; i < combinedData.size(); ++i) {
+        //     std::cout << combinedData[i] << " ";
+        // }
+        // std::cout << std::endl;
         unique_ids.push_back(combinedData);
 
     }//end of for loop
 
+
+
+    // std::cout << "unique_id: ";
+    // for (size_t i = 0; i < unique_ids.size(); ++i) {
+    //     std::cout << unique_ids[i] << " ";
+    // }
+    // std::cout << std::endl;
 
     return unique_ids;
 
@@ -948,18 +1006,15 @@ cv::Mat normalize(const cv::Mat& image) {
     return im;
 }
 
+
 // Define a function to calculate SVD (you should implement this function)
 std::vector<cv::Mat> calculateSVD(const cv::Mat& detected) {
     cv::Mat l1, l2, l3;
     cv::Mat l4;
 
-    // std::cout << detected.rows << detected.cols << std::endl;
-
     cv::Mat image1 = normalize(detected);
     int height = image1.rows;
     int width = image1.cols;
-
-    // std::cout << height << width << std::endl;
 
     cv::Mat rc = image1.clone();
     cv::Mat gc = image1.clone();
@@ -1010,7 +1065,6 @@ std::vector<cv::Mat> calculateSVD(const cv::Mat& detected) {
 
     // Store image dimensions in l4
     l4= cv::Mat(1, 2, CV_32S);
-    // l4=cv::Mat(1,2, CV_32FC3);
     l4.at<int>(0, 0) = height;
     l4.at<int>(0, 1) = width;
 
@@ -1027,14 +1081,16 @@ std::vector<cv::Mat> calculateSVD(const cv::Mat& detected) {
 
 }
 
-
 double get_score(
     const cv::Mat& l1, const cv::Mat& l2, const cv::Mat& l3, const cv::Mat& l4,
     const cv::Mat& c1, const cv::Mat& c2, const cv::Mat& c3, const cv::Mat& c4) {
     
     float sum = 0;
     float mag2 = 0;
+    // int mag2_int=0;
 
+    // std::cout << l1.rows << std::endl;
+    // std::cout << l1.cols << std::endl;
 
     for (int x = 0; x < l1.rows; ++x) {
         // std::cout << l1.at<float>(x, 0) << std::endl;
@@ -1044,7 +1100,11 @@ double get_score(
         // std::cout << sum << std::endl;
     }
 
-
+    // std::cout << l4.rows << std::endl;
+    // std::cout << l4.cols << std::endl;
+    // std::cout << l4 << std::endl;
+    // std::cout << l4.at<int>(0, 0) << std::endl;
+    // std::cout << l4.at<int>(0, 1) << std::endl;
     for (int x = 0; x < l4.rows; ++x) {
         // std::cout << static_cast<float>(l4.at<int>(0, x)) << std::endl;
 
@@ -1052,14 +1112,21 @@ double get_score(
         // mag2_int+= pow(l4.at<int>(0, x) - c4.at<int>(0, x), 2);
     }
 
+
+    // std::cout << mag2<< std::endl;
+
     mag2 = mag2 / pow((static_cast<float>(l4.at<int>(0, 0))  * static_cast<float>(l4.at<int>(0, 1)) )
      + (static_cast<float>(c4.at<int>(0, 0)) * static_cast<float>(c4.at<int>(0, 1))), 0.5);
+    // std::cout << mag2 << std::endl;
     float mag1 = pow(sum, 0.5);
     mag2 = pow(mag2, 0.5);
 
+    // std::cout << mag1 << std::endl;
+    // std::cout << mag2 << std::endl;
     return mag1 + mag2;
     // return 1;
 }
+
 
 
 //so now the result is become 4bbox, 1confidence, 1classid, 1lastseen frame, 1trackingid, 1iffindforco, 1co/svd score
@@ -1098,8 +1165,8 @@ void compare(
   // int cut_threshold = 40;
 
 
-  int svd_threshold=15;
-  int cut_threshold=90;
+  int svd_threshold=40;
+  int cut_threshold=120;
 
 
 
@@ -1294,7 +1361,7 @@ void compare(
                   if (class_id2 == class_id1){
 
                     cv::Mat ds_detected2;
-                    cv::resize(detected2, ds_detected2, cv::Size(30, 30));
+                    cv::resize(detected2, ds_detected2, cv::Size(120, 120));
 
                     
                     std::vector<cv::Mat> l1l4 = calculateSVD(ds_detected2);
@@ -1304,7 +1371,7 @@ void compare(
 
          
                     cv::Mat ds_detected1;
-                    cv::resize(detected1, ds_detected1, cv::Size(30, 30));
+                    cv::resize(detected1, ds_detected1, cv::Size(120, 120));
                     std::vector<cv::Mat> c1c4 = calculateSVD(ds_detected1);
 
 
@@ -1489,7 +1556,7 @@ cv::Mat plotOneBox(const std::vector<float>& x, cv::Mat im, cv::Scalar color = c
     return im;
 }
 
-void plotBboxes(const cv::Mat& img, const std::vector<std::vector<float>>& results,
+cv::Mat plotBboxes(const cv::Mat& img, const std::vector<std::vector<float>>& results,
                 const std::vector<std::string>& coco_names, const std::string& savePath) {
     // cv::Mat im0 = cv::imread(imgPath);
     cv::Mat im0=img;
@@ -1518,18 +1585,18 @@ void plotBboxes(const cv::Mat& img, const std::vector<std::vector<float>>& resul
 
         im0 = plotOneBox(bbox, im0, color, label);}
     }
-    if (!im0.empty()) {
-      try {
-          cv::imwrite(savePath, im0);
+    // if (!im0.empty()) {
+    //   try {
+    //       cv::imwrite(savePath, im0);
   
-      } catch (const std::exception& e) {
-          std::cerr << "Error: " << e.what() << std::endl;
-      }
-    } else {
+    //   } catch (const std::exception& e) {
+    //       std::cerr << "Error: " << e.what() << std::endl;
+    //   }
+    // } else {
 
-    }
+    // }
 
-    // return im0;
+    return im0;
 }
 
 
@@ -1537,247 +1604,247 @@ void plotBboxes(const cv::Mat& img, const std::vector<std::vector<float>>& resul
 
 // // // //this is for inferencing on two images
 
-int main(int argc, char **argv)
-{
+// int main(int argc, char **argv)
+// {
 
-std::vector<std::string> coco_names = {
-    "person", "bicycle", "car", "motorcycle", "airplane", "bus", "train", "truck", "boat",
-    "traffic light", "fire hydrant", "stop sign", "parking meter", "bench", "bird", "cat", "dog",
-    "horse", "sheep", "cow", "elephant", "bear", "zebra", "giraffe", "backpack", "umbrella", "handbag",
-    "tie", "suitcase", "frisbee", "skis", "snowboard", "sports ball", "kite", "baseball bat", "baseball glove",
-    "skateboard", "surfboard", "tennis racket", "bottle", "wine glass", "cup", "fork", "knife", "spoon", "bowl",
-    "banana", "apple", "sandwich", "orange", "broccoli", "carrot", "hot dog", "pizza", "donut", "cake", "chair",
-    "couch", "potted plant", "bed", "dining table", "toilet", "tv", "laptop", "mouse", "remote", "keyboard",
-    "cell phone", "microwave", "oven", "toaster", "sink", "refrigerator", "book", "clock", "vase", "scissors",
-    "teddy bear", "hair drier", "toothbrush"
-};
+// std::vector<std::string> coco_names = {
+//     "person", "bicycle", "car", "motorcycle", "airplane", "bus", "train", "truck", "boat",
+//     "traffic light", "fire hydrant", "stop sign", "parking meter", "bench", "bird", "cat", "dog",
+//     "horse", "sheep", "cow", "elephant", "bear", "zebra", "giraffe", "backpack", "umbrella", "handbag",
+//     "tie", "suitcase", "frisbee", "skis", "snowboard", "sports ball", "kite", "baseball bat", "baseball glove",
+//     "skateboard", "surfboard", "tennis racket", "bottle", "wine glass", "cup", "fork", "knife", "spoon", "bowl",
+//     "banana", "apple", "sandwich", "orange", "broccoli", "carrot", "hot dog", "pizza", "donut", "cake", "chair",
+//     "couch", "potted plant", "bed", "dining table", "toilet", "tv", "laptop", "mouse", "remote", "keyboard",
+//     "cell phone", "microwave", "oven", "toaster", "sink", "refrigerator", "book", "clock", "vase", "scissors",
+//     "teddy bear", "hair drier", "toothbrush"
+// };
 
 
-    // create model
-  std::unique_ptr<tflite::FlatBufferModel> model =
-      tflite::FlatBufferModel::BuildFromFile("yolov8l_integer_quant.tflite");
+//     // create model
+//   std::unique_ptr<tflite::FlatBufferModel> model =
+//       tflite::FlatBufferModel::BuildFromFile("yolov8l_integer_quant.tflite");
   
-  auto ext_delegate_option = TfLiteExternalDelegateOptionsDefault("/usr/lib/libvx_delegate.so");
-  auto ext_delegate_ptr = TfLiteExternalDelegateCreate(&ext_delegate_option);
-  tflite::ops::builtin::BuiltinOpResolver resolver;
-  std::unique_ptr<tflite::Interpreter> interpreter;
-  tflite::InterpreterBuilder(*model, resolver)(&interpreter);
-  interpreter->ModifyGraphWithDelegate(ext_delegate_ptr);
-  interpreter->SetAllowFp16PrecisionForFp32(false);
-  interpreter->AllocateTensors();
+//   auto ext_delegate_option = TfLiteExternalDelegateOptionsDefault("/usr/lib/libvx_delegate.so");
+//   auto ext_delegate_ptr = TfLiteExternalDelegateCreate(&ext_delegate_option);
+//   tflite::ops::builtin::BuiltinOpResolver resolver;
+//   std::unique_ptr<tflite::Interpreter> interpreter;
+//   tflite::InterpreterBuilder(*model, resolver)(&interpreter);
+//   interpreter->ModifyGraphWithDelegate(ext_delegate_ptr);
+//   interpreter->SetAllowFp16PrecisionForFp32(false);
+//   interpreter->AllocateTensors();
 
-  // string imgf1="./baskcourt_compare/0940.png";
-  // string imgf2="./baskcourt_compare/0941.png";  
+//   // string imgf1="./baskcourt_compare/0940.png";
+//   // string imgf2="./baskcourt_compare/0941.png";  
 
-  // string imgf1="./person_compare/1.jpg";
-  // string imgf2="./person_compare/2.jpg"; 
+//   // string imgf1="./person_compare/1.jpg";
+//   // string imgf2="./person_compare/2.jpg"; 
 
-  string imgf1="./bus_compare2/1.jpg";
-  string imgf2="./bus_compare2/2.jpg";
-  string imgf3="./bus_compare2/3.jpg";
-  string imgf4="./bus_compare2/4.jpg";
+//   string imgf1="./bus_compare2/1.jpg";
+//   string imgf2="./bus_compare2/2.jpg";
+//   string imgf3="./bus_compare2/3.jpg";
+//   string imgf4="./bus_compare2/4.jpg";
 
-  // string imgf1="./bus_compare/0030.jpg";
-  // string imgf2="./bus_compare/0060.jpg";
-  // string imgf3="./bus_compare/0090.jpg";
+//   // string imgf1="./bus_compare/0030.jpg";
+//   // string imgf2="./bus_compare/0060.jpg";
+//   // string imgf3="./bus_compare/0090.jpg";
   
-  // string imgf1="./house_compare/l1.png";
-  // string imgf2="./house_compare/l2.png";
-  // string imgf3="./house_compare/l3.png";
-  // string imgf4="./house_compare/l4.png";
-  // string imgf5="./house_compare/l5.png";
-  // string imgf6="./house_compare/l6.png";
-  // string imgf7="./house_compare/l7.png";
-  // string imgf8="./house_compare/l8.png";
-  // string imgf9="./house_compare/l9.png";
-  // string imgf10="./house_compare/l10.png";
+//   // string imgf1="./house_compare/l1.png";
+//   // string imgf2="./house_compare/l2.png";
+//   // string imgf3="./house_compare/l3.png";
+//   // string imgf4="./house_compare/l4.png";
+//   // string imgf5="./house_compare/l5.png";
+//   // string imgf6="./house_compare/l6.png";
+//   // string imgf7="./house_compare/l7.png";
+//   // string imgf8="./house_compare/l8.png";
+//   // string imgf9="./house_compare/l9.png";
+//   // string imgf10="./house_compare/l10.png";
 
 
-  //good
-  // string imgf1="./s1.jpg";
-  // string imgf2="./s2.jpg";
-  // string imgf3="./s3.jpg";
-  // string imgf4="./s4.jpg";
+//   //good
+//   // string imgf1="./s1.jpg";
+//   // string imgf2="./s2.jpg";
+//   // string imgf3="./s3.jpg";
+//   // string imgf4="./s4.jpg";
 
 
-  std::chrono::time_point<std::chrono::system_clock> beg, start, end, done, nmsdone;
-  std::chrono::duration<double> elapsed_seconds;
+//   std::chrono::time_point<std::chrono::system_clock> beg, start, end, done, nmsdone;
+//   std::chrono::duration<double> elapsed_seconds;
 
-  cv::Mat img1 = cv::imread(imgf1);
-  if (img1.empty()) {
-      std::cerr << "Failed to load image." << std::endl;
-      // You should return an empty cv::Mat or handle errors differently.
-      return 0;
-  }
+//   cv::Mat img1 = cv::imread(imgf1);
+//   if (img1.empty()) {
+//       std::cerr << "Failed to load image." << std::endl;
+//       // You should return an empty cv::Mat or handle errors differently.
+//       return 0;
+//   }
 
-  cv::Mat img2 = cv::imread(imgf2);
-  if (img2.empty()) {
-      std::cerr << "Failed to load image." << std::endl;
-      // You should return an empty cv::Mat or handle errors differently.
-      return 0;
-  }
+//   cv::Mat img2 = cv::imread(imgf2);
+//   if (img2.empty()) {
+//       std::cerr << "Failed to load image." << std::endl;
+//       // You should return an empty cv::Mat or handle errors differently.
+//       return 0;
+//   }
 
-  cv::Mat img3 = cv::imread(imgf3);
-  if (img3.empty()) {
-      std::cerr << "Failed to load image." << std::endl;
-      // You should return an empty cv::Mat or handle errors differently.
-      return 0;
-  }
+//   cv::Mat img3 = cv::imread(imgf3);
+//   if (img3.empty()) {
+//       std::cerr << "Failed to load image." << std::endl;
+//       // You should return an empty cv::Mat or handle errors differently.
+//       return 0;
+//   }
 
 
 
-  cv::Mat img4 = cv::imread(imgf4);
-  if (img4.empty()) {
-      std::cerr << "Failed to load image." << std::endl;
-      // You should return an empty cv::Mat or handle errors differently.
-      return 0;
-  }
+//   cv::Mat img4 = cv::imread(imgf4);
+//   if (img4.empty()) {
+//       std::cerr << "Failed to load image." << std::endl;
+//       // You should return an empty cv::Mat or handle errors differently.
+//       return 0;
+//   }
   
-  // cv::Mat img5 = cv::imread(imgf5);
-  // if (img5.empty()) {
-  //     std::cerr << "Failed to load image." << std::endl;
-  //     // You should return an empty cv::Mat or handle errors differently.
-  //     return 0;
-  // }
+//   // cv::Mat img5 = cv::imread(imgf5);
+//   // if (img5.empty()) {
+//   //     std::cerr << "Failed to load image." << std::endl;
+//   //     // You should return an empty cv::Mat or handle errors differently.
+//   //     return 0;
+//   // }
 
-  // cv::Mat img6 = cv::imread(imgf6);
-  // if (img6.empty()) {
-  //     std::cerr << "Failed to load image." << std::endl;
-  //     // You should return an empty cv::Mat or handle errors differently.
-  //     return 0;
-  // }
+//   // cv::Mat img6 = cv::imread(imgf6);
+//   // if (img6.empty()) {
+//   //     std::cerr << "Failed to load image." << std::endl;
+//   //     // You should return an empty cv::Mat or handle errors differently.
+//   //     return 0;
+//   // }
 
-  // cv::Mat img7 = cv::imread(imgf7);
-  // if (img7.empty()) {
-  //     std::cerr << "Failed to load image." << std::endl;
-  //     // You should return an empty cv::Mat or handle errors differently.
-  //     return 0;
-  // }
+//   // cv::Mat img7 = cv::imread(imgf7);
+//   // if (img7.empty()) {
+//   //     std::cerr << "Failed to load image." << std::endl;
+//   //     // You should return an empty cv::Mat or handle errors differently.
+//   //     return 0;
+//   // }
 
-  // cv::Mat img8 = cv::imread(imgf8);
-  // if (img8.empty()) {
-  //     std::cerr << "Failed to load image." << std::endl;
-  //     // You should return an empty cv::Mat or handle errors differently.
-  //     return 0;
-  // }
+//   // cv::Mat img8 = cv::imread(imgf8);
+//   // if (img8.empty()) {
+//   //     std::cerr << "Failed to load image." << std::endl;
+//   //     // You should return an empty cv::Mat or handle errors differently.
+//   //     return 0;
+//   // }
 
-  // cv::Mat img9 = cv::imread(imgf9);
-  // if (img9.empty()) {
-  //     std::cerr << "Failed to load image." << std::endl;
-  //     // You should return an empty cv::Mat or handle errors differently.
-  //     return 0;
-  // }
+//   // cv::Mat img9 = cv::imread(imgf9);
+//   // if (img9.empty()) {
+//   //     std::cerr << "Failed to load image." << std::endl;
+//   //     // You should return an empty cv::Mat or handle errors differently.
+//   //     return 0;
+//   // }
 
-  // cv::Mat img10 = cv::imread(imgf10);
-  // if (img10.empty()) {
-  //     std::cerr << "Failed to load image." << std::endl;
-  //     // You should return an empty cv::Mat or handle errors differently.
-  //     return 0;
-  // }
+//   // cv::Mat img10 = cv::imread(imgf10);
+//   // if (img10.empty()) {
+//   //     std::cerr << "Failed to load image." << std::endl;
+//   //     // You should return an empty cv::Mat or handle errors differently.
+//   //     return 0;
+//   // }
 
-  float addition=1;
+//   float addition=1;
 
 
-  std::vector<std::vector<float>> results1 = process_4(interpreter,img1);
+//   std::vector<std::vector<float>> results1 = process_4(interpreter,img1);
 
  
-  std::vector<std::vector<float>> output_id1=output_id(img1, results1);
+//   std::vector<std::vector<float>> output_id1=output_id(img1, results1);
 
 
-  // for(int i=0;i<results1.size();i++){
-  //   results1[i].push_back(0.0);
-  // }
+//   // for(int i=0;i<results1.size();i++){
+//   //   results1[i].push_back(0.0);
+//   // }
   
 
 
 
-  //so now the result is become 4bbox, 1confidence, 1classid, 1lastseen frame, 1trackingid, 
-  generateIds(&results1);
+//   //so now the result is become 4bbox, 1confidence, 1classid, 1lastseen frame, 1trackingid, 
+//   generateIds(&results1);
 
 
-  plotBboxes(img1, results1, coco_names, "./output1.jpg");
-  update_lastseen(&results1);
+//   plotBboxes(img1, results1, coco_names, "./output1.jpg");
+//   update_lastseen(&results1);
 
 
 
 
-  std::vector<std::vector<float>> results2 = process_4(interpreter,img2);
+//   std::vector<std::vector<float>> results2 = process_4(interpreter,img2);
 
  
-  std::vector<std::vector<float>> output_id2=output_id(img2, results2);
+//   std::vector<std::vector<float>> output_id2=output_id(img2, results2);
 
-  start = std::chrono::system_clock::now();
-  compare(
-      img1, &results1,output_id1,
-      img2, &results2,output_id2, &addition
-  );
-  end = std::chrono::system_clock::now();
-  elapsed_seconds = end - start;
-  printf("The time for compare was s: %.10f\n", elapsed_seconds.count());
-  output_id2=output_id(img2, results2);
+//   start = std::chrono::system_clock::now();
+//   compare(
+//       img1, &results1,output_id1,
+//       img2, &results2,output_id2, &addition
+//   );
+//   end = std::chrono::system_clock::now();
+//   elapsed_seconds = end - start;
+//   printf("The time for compare was s: %.10f\n", elapsed_seconds.count());
+//   output_id2=output_id(img2, results2);
 
   
 
-  plotBboxes(img2, results2, coco_names, "./output2.jpg");
+//   plotBboxes(img2, results2, coco_names, "./output2.jpg");
 
-  update_lastseen(&results2);
-
-
-
-
-
-  std::vector<std::vector<float>> results3 = process_4(interpreter,img3);
-
- 
-  std::vector<std::vector<float>> output_id3=output_id(img3, results3);
-
-
-
-  start = std::chrono::system_clock::now();
-  compare(
-      img2, &results2,output_id2,
-      img3, &results3,output_id3, &addition
-  );
-  end = std::chrono::system_clock::now();
-  elapsed_seconds = end - start;
-  printf("The time for compare was s: %.10f\n", elapsed_seconds.count());
-
-
-
-  output_id3=output_id(img3, results3);
-
-  plotBboxes(img3, results3, coco_names, "./output3.jpg");
-
-  update_lastseen(&results3);
+//   update_lastseen(&results2);
 
 
 
 
 
-
-
-
-
-  std::vector<std::vector<float>> results4 = process_4(interpreter,img4);
+//   std::vector<std::vector<float>> results3 = process_4(interpreter,img3);
 
  
-  std::vector<std::vector<float>> output_id4=output_id(img4, results4);
+//   std::vector<std::vector<float>> output_id3=output_id(img3, results3);
 
 
-  start = std::chrono::system_clock::now();
-  compare(
-      img3, &results3,output_id3,
-      img4, &results4,output_id4, &addition
-  );
-  end = std::chrono::system_clock::now();
-  elapsed_seconds = end - start;
-  printf("The time for compare was s: %.10f\n", elapsed_seconds.count());
 
-  output_id4=output_id(img4, results4);
+//   start = std::chrono::system_clock::now();
+//   compare(
+//       img2, &results2,output_id2,
+//       img3, &results3,output_id3, &addition
+//   );
+//   end = std::chrono::system_clock::now();
+//   elapsed_seconds = end - start;
+//   printf("The time for compare was s: %.10f\n", elapsed_seconds.count());
 
-  plotBboxes(img4, results4, coco_names, "./output4.jpg");
 
-  update_lastseen(&results4);
+
+//   output_id3=output_id(img3, results3);
+
+//   plotBboxes(img3, results3, coco_names, "./output3.jpg");
+
+//   update_lastseen(&results3);
+
+
+
+
+
+
+
+
+
+//   std::vector<std::vector<float>> results4 = process_4(interpreter,img4);
+
+ 
+//   std::vector<std::vector<float>> output_id4=output_id(img4, results4);
+
+
+//   start = std::chrono::system_clock::now();
+//   compare(
+//       img3, &results3,output_id3,
+//       img4, &results4,output_id4, &addition
+//   );
+//   end = std::chrono::system_clock::now();
+//   elapsed_seconds = end - start;
+//   printf("The time for compare was s: %.10f\n", elapsed_seconds.count());
+
+//   output_id4=output_id(img4, results4);
+
+//   plotBboxes(img4, results4, coco_names, "./output4.jpg");
+
+//   update_lastseen(&results4);
 
 
 
@@ -1937,10 +2004,12 @@ std::vector<std::string> coco_names = {
 //   // }
 
 
-  return 0;
+//   return 0;
 
 
-}
+// }
+
+
 
 
 
@@ -1951,158 +2020,148 @@ std::vector<std::string> coco_names = {
 
 
 // // // // this is for inferencing on video:
-// int main(int argc, char **argv)
-// {
+int main(int argc, char **argv)
+{
 
-//   std::vector<std::string> coco_names = {
-//       "person", "bicycle", "car", "motorcycle", "airplane", "bus", "train", "truck", "boat",
-//       "traffic light", "fire hydrant", "stop sign", "parking meter", "bench", "bird", "cat", "dog",
-//       "horse", "sheep", "cow", "elephant", "bear", "zebra", "giraffe", "backpack", "umbrella", "handbag",
-//       "tie", "suitcase", "frisbee", "skis", "snowboard", "sports ball", "kite", "baseball bat", "baseball glove",
-//       "skateboard", "surfboard", "tennis racket", "bottle", "wine glass", "cup", "fork", "knife", "spoon", "bowl",
-//       "banana", "apple", "sandwich", "orange", "broccoli", "carrot", "hot dog", "pizza", "donut", "cake", "chair",
-//       "couch", "potted plant", "bed", "dining table", "toilet", "tv", "laptop", "mouse", "remote", "keyboard",
-//       "cell phone", "microwave", "oven", "toaster", "sink", "refrigerator", "book", "clock", "vase", "scissors",
-//       "teddy bear", "hair drier", "toothbrush"
-//   };
+  std::vector<std::string> coco_names = {
+      "person", "bicycle", "car", "motorcycle", "airplane", "bus", "train", "truck", "boat",
+      "traffic light", "fire hydrant", "stop sign", "parking meter", "bench", "bird", "cat", "dog",
+      "horse", "sheep", "cow", "elephant", "bear", "zebra", "giraffe", "backpack", "umbrella", "handbag",
+      "tie", "suitcase", "frisbee", "skis", "snowboard", "sports ball", "kite", "baseball bat", "baseball glove",
+      "skateboard", "surfboard", "tennis racket", "bottle", "wine glass", "cup", "fork", "knife", "spoon", "bowl",
+      "banana", "apple", "sandwich", "orange", "broccoli", "carrot", "hot dog", "pizza", "donut", "cake", "chair",
+      "couch", "potted plant", "bed", "dining table", "toilet", "tv", "laptop", "mouse", "remote", "keyboard",
+      "cell phone", "microwave", "oven", "toaster", "sink", "refrigerator", "book", "clock", "vase", "scissors",
+      "teddy bear", "hair drier", "toothbrush"
+  };
 
 
-//     // create model
-//   std::unique_ptr<tflite::FlatBufferModel> model =
-//       tflite::FlatBufferModel::BuildFromFile("yolov8l_integer_quant.tflite");
+    // create model
+  std::unique_ptr<tflite::FlatBufferModel> model =
+      tflite::FlatBufferModel::BuildFromFile("yolov8l_integer_quant.tflite");
   
-//   auto ext_delegate_option = TfLiteExternalDelegateOptionsDefault("/usr/lib/libvx_delegate.so");
-//   auto ext_delegate_ptr = TfLiteExternalDelegateCreate(&ext_delegate_option);
-//   tflite::ops::builtin::BuiltinOpResolver resolver;
-//   std::unique_ptr<tflite::Interpreter> interpreter;
-//   tflite::InterpreterBuilder(*model, resolver)(&interpreter);
-//   interpreter->ModifyGraphWithDelegate(ext_delegate_ptr);
-//   interpreter->SetAllowFp16PrecisionForFp32(false);
-//   interpreter->AllocateTensors();
+  auto ext_delegate_option = TfLiteExternalDelegateOptionsDefault("/usr/lib/libvx_delegate.so");
+  auto ext_delegate_ptr = TfLiteExternalDelegateCreate(&ext_delegate_option);
+  tflite::ops::builtin::BuiltinOpResolver resolver;
+  std::unique_ptr<tflite::Interpreter> interpreter;
+  tflite::InterpreterBuilder(*model, resolver)(&interpreter);
+  interpreter->ModifyGraphWithDelegate(ext_delegate_ptr);
+  interpreter->SetAllowFp16PrecisionForFp32(false);
+  interpreter->AllocateTensors();
 
-//   std::cout << " Tensorflow Test " << endl;
-
-
-//   cv::VideoCapture cap("./11s.mp4"); 
-//   if (!cap.isOpened()) {
-//       std::cerr << "Error: Couldn't open input video!" << std::endl;
-//       return -1;
-//   }
-
-//   int frame_width = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_WIDTH));
-//   int frame_height = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_HEIGHT));
-
-//   // cv::VideoWriter output_video("./output.mp4", cv::VideoWriter::fourcc('X', '2', '6', '4'), 25, cv::Size(frame_width, frame_height));
-//   // cv::VideoWriter output_video("./output_video.mp4", cv::VideoWriter::fourcc('M', 'P', '4', 'V'), 25, cv::Size(frame_width, frame_height));
-//   // cv::VideoWriter video("output.avi",CV_FOURCC('M','J','P','G'),25, Size(frame_width,frame_height));
-//   cv::VideoWriter video("output_11s.avi", cv::VideoWriter::fourcc('M','J','P','G'), 25, Size(frame_width,frame_height));
-
-//   if (!video.isOpened()) {
-//       std::cerr << "Error: Couldn't create output video!" << std::endl;
-//       return -1;
-//   }
-
-//   cv::Mat prev_frame, current_frame;
-//   cv::Mat result_frame; // Store the result frame with bounding boxes
-
-//   cap >> current_frame;
-//   std::vector<std::vector<float>> first1 = process_4(interpreter,current_frame);
+  std::cout << " Tensorflow Test " << endl;
 
 
-//   std::vector<std::vector<float>> first_id1=output_id(current_frame, first1);
-//   std::map<int, std::vector<float>> ids1=generateIds(first_id1);
+  cv::VideoCapture cap("./short.mp4"); 
+  if (!cap.isOpened()) {
+      std::cerr << "Error: Couldn't open input video!" << std::endl;
+      return -1;
+  }
+
+  int frame_width = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_WIDTH));
+  int frame_height = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_HEIGHT));
+
+  // cv::VideoWriter output_video("./output.mp4", cv::VideoWriter::fourcc('X', '2', '6', '4'), 25, cv::Size(frame_width, frame_height));
+  // cv::VideoWriter output_video("./output_video.mp4", cv::VideoWriter::fourcc('M', 'P', '4', 'V'), 25, cv::Size(frame_width, frame_height));
+  // cv::VideoWriter video("output.avi",CV_FOURCC('M','J','P','G'),25, Size(frame_width,frame_height));
+  cv::VideoWriter video("output_short.avi", cv::VideoWriter::fourcc('M','J','P','G'), 25, Size(frame_width,frame_height));
+
+  if (!video.isOpened()) {
+      std::cerr << "Error: Couldn't create output video!" << std::endl;
+      return -1;
+  }
+
+  cv::Mat prev_frame, current_frame;
+  cv::Mat result_frame; // Store the result frame with bounding boxes
+
+  cap >> current_frame;
+
+  float addition=1;
+
+  // std::vector<std::vector<float>> first1 = process_4(interpreter,current_frame);
 
 
-//   float addition=20;
-
-//   while (true) {
-    
-//     prev_frame = current_frame.clone();
-
-//     cap >> current_frame;
-    
-
-//     if (current_frame.empty()) {
-//         break; // End of video
-//     }
-
-//     if (!prev_frame.empty()) {
-
-    
-
-//       std::vector<std::vector<float>> results1 = process_4(interpreter,prev_frame);
+  // std::vector<std::vector<float>> first_id1=output_id(current_frame, first1);
+  // std::map<int, std::vector<float>> ids1=generateIds(first_id1);
 
 
-//       std::vector<std::vector<float>> output_id1=output_id(prev_frame, results1);
+  std::vector<std::vector<float>> results1 = process_4(interpreter,current_frame);
 
-//       // std::cout <<"finished first one" << std::endl;
-
-//       // for (const std::vector<float>& row : output_id1) {
-//       //     // Iterate through the elements in each row
-//       //     for (float element : row) {
-//       //         std::cout << element << " ";
-//       //     }
-//       //     // Add a newline after each row
-//       //     std::cout << std::endl;
-//       // }
-
-//       std::vector<std::vector<float>> results2 = process_4(interpreter,current_frame);
-
-     
-
-//       std::vector<std::vector<float>> output_id2=output_id(current_frame, results2);
-
-//       // std::cout <<"finished second one" << std::endl;
-
-//       // for (const std::vector<float>& row : output_id2) {
-//       //     // Iterate through the elements in each row
-//       //     for (float element : row) {
-//       //         std::cout << element << " ";
-//       //     }
-//       //     // Add a newline after each row
-//       //     std::cout << std::endl;
-//       // }
-
-//       std::map<int, std::vector<float>> ids2=compare(
-//           prev_frame, results1,output_id1,
-//           current_frame, results2,output_id2, ids1,  &addition
-//       );
-//       // std::cout << "after compare" << std::endl;
-//       // cv::Mat prev_result_frame=plotBboxes(prev_frame, results1, coco_names, "./output.jpg",compare_result[0]);
-
-//       cv::Mat current_result_frame=plotBboxes(current_frame, results2, coco_names, "./output2.jpg",ids2);
-//       // Write the original frames to the output video
-//       // video.write(prev_result_frame);
-//       video.write(current_result_frame);
-
-//       ids1=ids2;
-
-      
-//     }
-
-//     // Break the loop if the user presses 'q'
-//     if (cv::waitKey(1) == 'q') {
-//         break;
-//     }
-
-//   }
-//   // When everything done, release the video capture and write object
-//   cap.release();
-//   video.release();
  
-//   // Closes all the frames
-//   destroyAllWindows();
+  std::vector<std::vector<float>> output_id1=output_id(current_frame, results1);
+
+  generateIds(&results1);
+  update_lastseen(&results1);
+  
+  std::chrono::time_point<std::chrono::system_clock> beg, start, end, done, nmsdone;
+  std::chrono::duration<double> elapsed_seconds;
 
 
-//   // for(int i=0;i<moved_list.size();i++){
-//   //   std::cout << moved_list[i] << std::endl;
-//   // }
+
+  while (true) {
+    
+    prev_frame = current_frame.clone();
+
+    cap >> current_frame;
+    
+
+    if (current_frame.empty()) {
+        break; // End of video
+    }
+
+    if (!prev_frame.empty()) {
+
+      std::vector<std::vector<float>> results2 = process_4(interpreter,current_frame);
+
+    
+      std::vector<std::vector<float>> output_id2=output_id(current_frame, results2);
 
 
-//   return 0;
+      start = std::chrono::system_clock::now();
+      compare(
+        prev_frame, &results1,output_id1,
+        current_frame, &results2,output_id2, &addition
+      );
+      end = std::chrono::system_clock::now();
+      elapsed_seconds = end - start;
+      printf("The time for compare was s: %.10f\n", elapsed_seconds.count());
+
+      output_id2=output_id(current_frame, results2);
+
+      cv::Mat current_result=plotBboxes(current_frame, results2, coco_names, "./output2.jpg");
+
+      video.write(current_result);
+
+      update_lastseen(&results2);
+
+      results1=results2;
+      output_id1=output_id2;
+
+    }
+
+    // Break the loop if the user presses 'q'
+    if (cv::waitKey(1) == 'q') {
+        break;
+    }
+
+  }
+  // When everything done, release the video capture and write object
+  cap.release();
+  video.release();
+ 
+  // Closes all the frames
+  destroyAllWindows();
 
 
-// }
+  // for(int i=0;i<moved_list.size();i++){
+  //   std::cout << moved_list[i] << std::endl;
+  // }
+
+
+  return 0;
+
+
+}
 
 
 
