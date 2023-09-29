@@ -32,6 +32,10 @@ Initial result using yolov8l quantized tflite pretrain model for stereo images(t
 ![](./assets/2.jpg)
 
 
+https://github.com/yide1235/Yolov8-tracking-tensorflow-lite-CPP/assets/66981525/530f5db2-8c15-4bbe-bf1e-fc55c073045e
+
+
+
 ### References
 - https://github.com/abewley/sort
 - https://github.com/ultralytics/ultralytics
