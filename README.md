@@ -7,6 +7,8 @@
 //then converts it in C++
 //integerated with video and motion detection
 //do frame1, frame2, then use frame2 id to do frame2 and frame3
+//so for ssim, it is the matching algorithm between two images, may need to tune parameter when use
+//for seq, just got a new one called yolov8forseq
 
 ### Features
 - Object Tracks
