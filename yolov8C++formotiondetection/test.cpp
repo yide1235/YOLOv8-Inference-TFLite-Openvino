@@ -1556,7 +1556,7 @@ cv::Mat plotOneBox(const std::vector<float>& x, cv::Mat im, cv::Scalar color = c
     return im;
 }
 
-cv::Mat plotBboxes(const cv::Mat& img, const std::vector<std::vector<float>>& results,
+void plotBboxes(const cv::Mat& img, const std::vector<std::vector<float>>& results,
                 const std::vector<std::string>& coco_names, const std::string& savePath) {
     // cv::Mat im0 = cv::imread(imgPath);
     cv::Mat im0=img;
@@ -1585,19 +1585,367 @@ cv::Mat plotBboxes(const cv::Mat& img, const std::vector<std::vector<float>>& re
 
         im0 = plotOneBox(bbox, im0, color, label);}
     }
-    // if (!im0.empty()) {
-    //   try {
-    //       cv::imwrite(savePath, im0);
+    if (!im0.empty()) {
+      try {
+          cv::imwrite(savePath, im0);
   
-    //   } catch (const std::exception& e) {
-    //       std::cerr << "Error: " << e.what() << std::endl;
-    //   }
-    // } else {
+      } catch (const std::exception& e) {
+          std::cerr << "Error: " << e.what() << std::endl;
+      }
+    } else {
 
-    // }
+    }
 
-    return im0;
+    // return im0;
 }
+
+
+
+
+
+
+
+
+
+
+// // // // this is for inferencing on video:
+int main(int argc, char **argv)
+{
+  std::vector<std::string> coco_names = {
+      "person", "bicycle", "car", "motorcycle", "airplane", "bus", "train", "truck", "boat",
+      "traffic light", "fire hydrant", "stop sign", "parking meter", "bench", "bird", "cat", "dog",
+      "horse", "sheep", "cow", "elephant", "bear", "zebra", "giraffe", "backpack", "umbrella", "handbag",
+      "tie", "suitcase", "frisbee", "skis", "snowboard", "sports ball", "kite", "baseball bat", "baseball glove",
+      "skateboard", "surfboard", "tennis racket", "bottle", "wine glass", "cup", "fork", "knife", "spoon", "bowl",
+      "banana", "apple", "sandwich", "orange", "broccoli", "carrot", "hot dog", "pizza", "donut", "cake", "chair",
+      "couch", "potted plant", "bed", "dining table", "toilet", "tv", "laptop", "mouse", "remote", "keyboard",
+      "cell phone", "microwave", "oven", "toaster", "sink", "refrigerator", "book", "clock", "vase", "scissors",
+      "teddy bear", "hair drier", "toothbrush"
+  };
+  // create model
+  std::unique_ptr<tflite::FlatBufferModel> model =
+      tflite::FlatBufferModel::BuildFromFile("yolov8l_integer_quant.tflite");
+  
+  // auto ext_delegate_option = TfLiteExternalDelegateOptionsDefault("/usr/lib/libvx_delegate.so");
+  // auto ext_delegate_ptr = TfLiteExternalDelegateCreate(&ext_delegate_option);
+  tflite::ops::builtin::BuiltinOpResolver resolver;
+  std::unique_ptr<tflite::Interpreter> interpreter;
+  tflite::InterpreterBuilder(*model, resolver)(&interpreter);
+  // interpreter->ModifyGraphWithDelegate(ext_delegate_ptr);
+  interpreter->SetAllowFp16PrecisionForFp32(false);
+  interpreter->AllocateTensors();
+  cv::VideoCapture cap("./11s.mp4"); 
+  if (!cap.isOpened()) {
+      std::cerr << "Error: Couldn't open input video!" << std::endl;
+      return -1;
+  }
+  int frame_width = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_WIDTH));
+  int frame_height = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_HEIGHT));
+  int fps = static_cast<int>(cap.get(cv::CAP_PROP_FPS));
+  // int totalFrames = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_COUNT));
+  int framesPerSecond = fps;
+  float addition=1;
+  float drop_threshold=20;
+  std::chrono::time_point<std::chrono::system_clock> beg, start, end, done, nmsdone;
+  std::chrono::duration<double> elapsed_seconds;
+  std::vector<std::vector<float>> results1;
+  std::vector<std::vector<float>> output_id1;
+  std::vector<std::vector<float>> results2;
+  std::vector<std::vector<float>> output_id2;
+  cv::Mat last_frame;
+  // std::cout << "====" << totalFrames<< std::endl;
+
+
+  int totalFrames = 0;
+
+  // Loop through all frames in the video
+  while (true) {
+      cv::Mat frame;
+      // Read a frame from the video
+      if (!cap.read(frame)) {
+          // If the frame couldn't be read, break the loop
+          break;
+      }
+      // Increment the total frame count
+      totalFrames++;
+  }
+
+  // Output the total number of frames
+  std::cout << "Total number of frames in the video: " << totalFrames << std::endl;
+
+
+  int i=0;
+    while(true){
+      std::cout << i << totalFrames << "-----" << std::endl;
+      if(i>totalFrames){
+        break;
+      }
+      if(i==0){
+        int frame1Number = i ;
+        int frame2Number = i + static_cast<int>(framesPerSecond)/2;
+        cap.set(cv::CAP_PROP_POS_FRAMES, frame1Number);
+        cv::Mat frame1;
+        cap >> frame1;
+        if (frame1.empty()) {
+          break; 
+        }
+        cap.set(cv::CAP_PROP_POS_FRAMES, frame2Number);
+        cv::Mat frame2;
+        cap >> frame2;
+        results1 = process_4(interpreter,frame1);
+        output_id1=output_id(frame1, results1);
+        generateIds(&results1);
+        update_lastseen(&results1);
+        std::vector<std::vector<float>> results2 = process_4(interpreter,frame2);
+        std::vector<std::vector<float>> output_id2=output_id(frame2, results2);
+        start = std::chrono::system_clock::now();
+        compare(
+          frame1, &results1,output_id1,
+          frame2, &results2,output_id2, &addition
+        );
+        end = std::chrono::system_clock::now();
+        elapsed_seconds = end - start;
+        printf("The time for compare was s: %.10f\n", elapsed_seconds.count());
+        output_id2=output_id(frame2, results2);
+        std::string outputFileName = "./out/output" + std::to_string(i) + ".jpg";
+        plotBboxes(frame2, results2, coco_names, outputFileName);
+        update_lastseen(&results2);
+        last_frame=frame2;
+      }
+      else
+        {
+        //last_frame, reuslts2, output_ids2
+        int frame1Number = i ;
+        int frame2Number = i + static_cast<int>(framesPerSecond)/2;
+        cap.set(cv::CAP_PROP_POS_FRAMES, frame1Number);
+        cv::Mat frame1;
+        cap >> frame1;
+        cap.set(cv::CAP_PROP_POS_FRAMES, frame2Number);
+        cv::Mat frame2;
+        cap >> frame2;
+        if (frame1.empty()) {
+          break;
+        }
+        //do check with results2(previous frame) and results3
+        std::vector<std::vector<float>> results3 = process_4(interpreter,frame1);
+        std::vector<std::vector<float>> output_id3=output_id(frame1, results3);
+        start = std::chrono::system_clock::now();
+        compare(
+          last_frame, &results2,output_id2,
+          frame1, &results3,output_id3, &addition
+        );
+        end = std::chrono::system_clock::now();
+        elapsed_seconds = end - start;
+        printf("The time for compare was s: %.10f\n", elapsed_seconds.count());
+        output_id3=output_id(frame1, results3);
+        update_lastseen(&results3);
+        //now compare results3(frame1) and resutls4(frame2), then pass the results to resutls2
+        std::vector<std::vector<float>> results4 = process_4(interpreter,frame2);
+        std::vector<std::vector<float>> output_id4=output_id(frame2, results4);
+        start = std::chrono::system_clock::now();
+        compare(
+          frame1, &results3,output_id3,
+          frame2, &results4,output_id4, &addition
+        );
+        end = std::chrono::system_clock::now();
+        elapsed_seconds = end - start;
+        printf("The time for compare was s: %.10f\n", elapsed_seconds.count());
+        output_id4=output_id(frame2, results4);
+        std::string outputFileName = "./out/output" + std::to_string(i) + ".jpg";
+        plotBboxes(frame2, results4, coco_names, outputFileName);
+        last_frame=frame2;
+        results2=results4;
+        output_id2=output_id4;
+      }
+      i=i+framesPerSecond;
+  }
+
+
+
+
+
+
+
+
+  // When everything done, release the video capture and write object
+  cap.release();
+
+
+
+
+  cap.release();
+  // video.release();
+ 
+  // Closes all the frames
+  // destroyAllWindows();
+
+  return 0;
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+//  // this is for inferencing on video:
+// int main(int argc, char **argv)
+// {
+
+//   std::vector<std::string> coco_names = {
+//       "person", "bicycle", "car", "motorcycle", "airplane", "bus", "train", "truck", "boat",
+//       "traffic light", "fire hydrant", "stop sign", "parking meter", "bench", "bird", "cat", "dog",
+//       "horse", "sheep", "cow", "elephant", "bear", "zebra", "giraffe", "backpack", "umbrella", "handbag",
+//       "tie", "suitcase", "frisbee", "skis", "snowboard", "sports ball", "kite", "baseball bat", "baseball glove",
+//       "skateboard", "surfboard", "tennis racket", "bottle", "wine glass", "cup", "fork", "knife", "spoon", "bowl",
+//       "banana", "apple", "sandwich", "orange", "broccoli", "carrot", "hot dog", "pizza", "donut", "cake", "chair",
+//       "couch", "potted plant", "bed", "dining table", "toilet", "tv", "laptop", "mouse", "remote", "keyboard",
+//       "cell phone", "microwave", "oven", "toaster", "sink", "refrigerator", "book", "clock", "vase", "scissors",
+//       "teddy bear", "hair drier", "toothbrush"
+//   };
+
+
+//     // create model
+//   std::unique_ptr<tflite::FlatBufferModel> model =
+//       tflite::FlatBufferModel::BuildFromFile("yolov8l_integer_quant.tflite");
+  
+//   auto ext_delegate_option = TfLiteExternalDelegateOptionsDefault("/usr/lib/libvx_delegate.so");
+//   auto ext_delegate_ptr = TfLiteExternalDelegateCreate(&ext_delegate_option);
+//   tflite::ops::builtin::BuiltinOpResolver resolver;
+//   std::unique_ptr<tflite::Interpreter> interpreter;
+//   tflite::InterpreterBuilder(*model, resolver)(&interpreter);
+//   interpreter->ModifyGraphWithDelegate(ext_delegate_ptr);
+//   interpreter->SetAllowFp16PrecisionForFp32(false);
+//   interpreter->AllocateTensors();
+
+//   std::cout << " Tensorflow Test " << endl;
+
+
+//   cv::VideoCapture cap("./short.mp4"); 
+//   if (!cap.isOpened()) {
+//       std::cerr << "Error: Couldn't open input video!" << std::endl;
+//       return -1;
+//   }
+
+//   int frame_width = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_WIDTH));
+//   int frame_height = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_HEIGHT));
+
+//   // cv::VideoWriter output_video("./output.mp4", cv::VideoWriter::fourcc('X', '2', '6', '4'), 25, cv::Size(frame_width, frame_height));
+//   // cv::VideoWriter output_video("./output_video.mp4", cv::VideoWriter::fourcc('M', 'P', '4', 'V'), 25, cv::Size(frame_width, frame_height));
+//   // cv::VideoWriter video("output.avi",CV_FOURCC('M','J','P','G'),25, Size(frame_width,frame_height));
+//   cv::VideoWriter video("output_short.avi", cv::VideoWriter::fourcc('M','J','P','G'), 25, Size(frame_width,frame_height));
+
+//   if (!video.isOpened()) {
+//       std::cerr << "Error: Couldn't create output video!" << std::endl;
+//       return -1;
+//   }
+
+//   cv::Mat prev_frame, current_frame;
+//   cv::Mat result_frame; // Store the result frame with bounding boxes
+
+//   cap >> current_frame;
+
+//   float addition=1;
+
+//   // std::vector<std::vector<float>> first1 = process_4(interpreter,current_frame);
+
+
+//   // std::vector<std::vector<float>> first_id1=output_id(current_frame, first1);
+//   // std::map<int, std::vector<float>> ids1=generateIds(first_id1);
+
+
+//   std::vector<std::vector<float>> results1 = process_4(interpreter,current_frame);
+
+ 
+//   std::vector<std::vector<float>> output_id1=output_id(current_frame, results1);
+
+//   generateIds(&results1);
+//   update_lastseen(&results1);
+  
+//   std::chrono::time_point<std::chrono::system_clock> beg, start, end, done, nmsdone;
+//   std::chrono::duration<double> elapsed_seconds;
+
+
+
+//   while (true) {
+    
+//     prev_frame = current_frame.clone();
+
+//     cap >> current_frame;
+    
+
+//     if (current_frame.empty()) {
+//         break; // End of video
+//     }
+
+//     if (!prev_frame.empty()) {
+
+//       std::vector<std::vector<float>> results2 = process_4(interpreter,current_frame);
+
+    
+//       std::vector<std::vector<float>> output_id2=output_id(current_frame, results2);
+
+
+//       start = std::chrono::system_clock::now();
+//       compare(
+//         prev_frame, &results1,output_id1,
+//         current_frame, &results2,output_id2, &addition
+//       );
+//       end = std::chrono::system_clock::now();
+//       elapsed_seconds = end - start;
+//       printf("The time for compare was s: %.10f\n", elapsed_seconds.count());
+
+//       output_id2=output_id(current_frame, results2);
+
+//       cv::Mat current_result= plotBboxes(current_frame, results2, coco_names, "./output2.jpg");
+
+//       video.write(current_result);
+
+//       update_lastseen(&results2);
+
+//       results1=results2;
+//       output_id1=output_id2;
+
+//     }
+
+//     // Break the loop if the user presses 'q'
+//     if (cv::waitKey(1) == 'q') {
+//         break;
+//     }
+
+//   }
+//   // When everything done, release the video capture and write object
+//   cap.release();
+//   video.release();
+ 
+//   // Closes all the frames
+//   destroyAllWindows();
+
+
+//   // for(int i=0;i<moved_list.size();i++){
+//   //   std::cout << moved_list[i] << std::endl;
+//   // }
+
+
+//   return 0;
+
+
+// }
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1852,146 +2200,150 @@ cv::Mat plotBboxes(const cv::Mat& img, const std::vector<std::vector<float>>& re
 
 
 
-  // std::vector<std::vector<float>> results5 = process_4(interpreter,img5);
+//   // std::vector<std::vector<float>> results5 = process_4(interpreter,img5);
 
  
-  // std::vector<std::vector<float>> output_id5=output_id(img5, results5);
-  // start = std::chrono::system_clock::now();
-  // compare(
-  //     img4, &results4,output_id4,
-  //     img5, &results5,output_id5, &addition
-  // );
-  // end = std::chrono::system_clock::now();
-  // elapsed_seconds = end - start;
-  // printf("The time for compare was s: %.10f\n", elapsed_seconds.count());
+//   // std::vector<std::vector<float>> output_id5=output_id(img5, results5);
+//   // start = std::chrono::system_clock::now();
+//   // compare(
+//   //     img4, &results4,output_id4,
+//   //     img5, &results5,output_id5, &addition
+//   // );
+//   // end = std::chrono::system_clock::now();
+//   // elapsed_seconds = end - start;
+//   // printf("The time for compare was s: %.10f\n", elapsed_seconds.count());
 
 
-  // output_id5=output_id(img5, results5);
+//   // output_id5=output_id(img5, results5);
 
-  // plotBboxes(img5, results5, coco_names, "./output5.jpg");
-
-
-
-
-
-
-
-  // std::vector<std::vector<float>> results6 = process_4(interpreter,img6);
-
- 
-  // std::vector<std::vector<float>> output_id6=output_id(img6, results6);
-  // start = std::chrono::system_clock::now();
-  // compare(
-  //     img5, &results5,output_id5,
-  //     img6, &results6,output_id6, &addition
-  // );
-  // end = std::chrono::system_clock::now();
-  // elapsed_seconds = end - start;
-  // printf("The time for compare was s: %.10f\n", elapsed_seconds.count());
-
-
-  // output_id6=output_id(img6, results6);
-
-  // plotBboxes(img6, results6, coco_names, "./output6.jpg");
+//   // plotBboxes(img5, results5, coco_names, "./output5.jpg");
 
 
 
 
 
 
-  // std::vector<std::vector<float>> results7 = process_4(interpreter,img7);
+
+//   // std::vector<std::vector<float>> results6 = process_4(interpreter,img6);
 
  
-  // std::vector<std::vector<float>> output_id7=output_id(img7, results7);
-  // start = std::chrono::system_clock::now();
-  // compare(
-  //     img6, &results6,output_id6,
-  //     img7, &results7,output_id7, &addition
-  // );
-  // end = std::chrono::system_clock::now();
-  // elapsed_seconds = end - start;
-  // printf("The time for compare was s: %.10f\n", elapsed_seconds.count());
+//   // std::vector<std::vector<float>> output_id6=output_id(img6, results6);
+//   // start = std::chrono::system_clock::now();
+//   // compare(
+//   //     img5, &results5,output_id5,
+//   //     img6, &results6,output_id6, &addition
+//   // );
+//   // end = std::chrono::system_clock::now();
+//   // elapsed_seconds = end - start;
+//   // printf("The time for compare was s: %.10f\n", elapsed_seconds.count());
 
 
-  // output_id7=output_id(img7, results7);
+//   // output_id6=output_id(img6, results6);
 
-  // plotBboxes(img7, results7, coco_names, "./output7.jpg");
-
-
-
-
-
-
-
-  // std::vector<std::vector<float>> results8 = process_4(interpreter,img8);
-
- 
-  // std::vector<std::vector<float>> output_id8=output_id(img8, results8);
-  // start = std::chrono::system_clock::now();
-  // compare(
-  //     img7, &results7,output_id7,
-  //     img8, &results8,output_id8, &addition
-  // );
-  // end = std::chrono::system_clock::now();
-  // elapsed_seconds = end - start;
-  // printf("The time for compare was s: %.10f\n", elapsed_seconds.count());
-
-
-
-  // output_id8=output_id(img8, results8);
-
-  // plotBboxes(img8, results8, coco_names, "./output8.jpg");
+//   // plotBboxes(img6, results6, coco_names, "./output6.jpg");
 
 
 
 
 
 
-
-  // std::vector<std::vector<float>> results9 = process_4(interpreter,img9);
+//   // std::vector<std::vector<float>> results7 = process_4(interpreter,img7);
 
  
-  // std::vector<std::vector<float>> output_id9=output_id(img9, results9);
-  // start = std::chrono::system_clock::now();
-  // compare(
-  //     img8, &results8,output_id8,
-  //     img9, &results9,output_id9, &addition
-  // );
-  // end = std::chrono::system_clock::now();
-  // elapsed_seconds = end - start;
-  // printf("The time for compare was s: %.10f\n", elapsed_seconds.count());
+//   // std::vector<std::vector<float>> output_id7=output_id(img7, results7);
+//   // start = std::chrono::system_clock::now();
+//   // compare(
+//   //     img6, &results6,output_id6,
+//   //     img7, &results7,output_id7, &addition
+//   // );
+//   // end = std::chrono::system_clock::now();
+//   // elapsed_seconds = end - start;
+//   // printf("The time for compare was s: %.10f\n", elapsed_seconds.count());
 
 
+//   // output_id7=output_id(img7, results7);
 
-  // output_id9=output_id(img9, results9);
-
-  // plotBboxes(img9, results9, coco_names, "./output9.jpg");
-
-
+//   // plotBboxes(img7, results7, coco_names, "./output7.jpg");
 
 
 
 
 
 
-  // std::vector<std::vector<float>> results10 = process_4(interpreter,img10);
+
+//   // std::vector<std::vector<float>> results8 = process_4(interpreter,img8);
 
  
-  // std::vector<std::vector<float>> output_id10=output_id(img10, results10);
-  // start = std::chrono::system_clock::now();
-  // compare(
-  //     img9, &results9,output_id9,
-  //     img10, &results10,output_id10, &addition
-  // );
-  // end = std::chrono::system_clock::now();
-  // elapsed_seconds = end - start;
-  // printf("The time for compare was s: %.10f\n", elapsed_seconds.count());
+//   // std::vector<std::vector<float>> output_id8=output_id(img8, results8);
+//   // start = std::chrono::system_clock::now();
+//   // compare(
+//   //     img7, &results7,output_id7,
+//   //     img8, &results8,output_id8, &addition
+//   // );
+//   // end = std::chrono::system_clock::now();
+//   // elapsed_seconds = end - start;
+//   // printf("The time for compare was s: %.10f\n", elapsed_seconds.count());
 
 
 
-  // output_id10=output_id(img10, results10);
+//   // output_id8=output_id(img8, results8);
 
-  // plotBboxes(img10, results10, coco_names, "./output10.jpg");
+//   // plotBboxes(img8, results8, coco_names, "./output8.jpg");
+
+
+
+
+
+
+
+//   // std::vector<std::vector<float>> results9 = process_4(interpreter,img9);
+
+ 
+//   // std::vector<std::vector<float>> output_id9=output_id(img9, results9);
+//   // start = std::chrono::system_clock::now();
+//   // compare(
+//   //     img8, &results8,output_id8,
+//   //     img9, &results9,output_id9, &addition
+//   // );
+//   // end = std::chrono::system_clock::now();
+//   // elapsed_seconds = end - start;
+//   // printf("The time for compare was s: %.10f\n", elapsed_seconds.count());
+
+
+
+//   // output_id9=output_id(img9, results9);
+
+//   // plotBboxes(img9, results9, coco_names, "./output9.jpg");
+
+
+
+
+
+
+
+
+//   // std::vector<std::vector<float>> results10 = process_4(interpreter,img10);
+
+ 
+//   // std::vector<std::vector<float>> output_id10=output_id(img10, results10);
+//   // start = std::chrono::system_clock::now();
+//   // compare(
+//   //     img9, &results9,output_id9,
+//   //     img10, &results10,output_id10, &addition
+//   // );
+//   // end = std::chrono::system_clock::now();
+//   // elapsed_seconds = end - start;
+//   // printf("The time for compare was s: %.10f\n", elapsed_seconds.count());
+
+
+
+//   // output_id10=output_id(img10, results10);
+
+//   // plotBboxes(img10, results10, coco_names, "./output10.jpg");
+
+
+
+
 
 
 
@@ -2008,160 +2360,5 @@ cv::Mat plotBboxes(const cv::Mat& img, const std::vector<std::vector<float>>& re
 
 
 // }
-
-
-
-
-
-
-
-
-
-
-
-// // // // this is for inferencing on video:
-int main(int argc, char **argv)
-{
-
-  std::vector<std::string> coco_names = {
-      "person", "bicycle", "car", "motorcycle", "airplane", "bus", "train", "truck", "boat",
-      "traffic light", "fire hydrant", "stop sign", "parking meter", "bench", "bird", "cat", "dog",
-      "horse", "sheep", "cow", "elephant", "bear", "zebra", "giraffe", "backpack", "umbrella", "handbag",
-      "tie", "suitcase", "frisbee", "skis", "snowboard", "sports ball", "kite", "baseball bat", "baseball glove",
-      "skateboard", "surfboard", "tennis racket", "bottle", "wine glass", "cup", "fork", "knife", "spoon", "bowl",
-      "banana", "apple", "sandwich", "orange", "broccoli", "carrot", "hot dog", "pizza", "donut", "cake", "chair",
-      "couch", "potted plant", "bed", "dining table", "toilet", "tv", "laptop", "mouse", "remote", "keyboard",
-      "cell phone", "microwave", "oven", "toaster", "sink", "refrigerator", "book", "clock", "vase", "scissors",
-      "teddy bear", "hair drier", "toothbrush"
-  };
-
-
-    // create model
-  std::unique_ptr<tflite::FlatBufferModel> model =
-      tflite::FlatBufferModel::BuildFromFile("yolov8l_integer_quant.tflite");
-  
-  auto ext_delegate_option = TfLiteExternalDelegateOptionsDefault("/usr/lib/libvx_delegate.so");
-  auto ext_delegate_ptr = TfLiteExternalDelegateCreate(&ext_delegate_option);
-  tflite::ops::builtin::BuiltinOpResolver resolver;
-  std::unique_ptr<tflite::Interpreter> interpreter;
-  tflite::InterpreterBuilder(*model, resolver)(&interpreter);
-  interpreter->ModifyGraphWithDelegate(ext_delegate_ptr);
-  interpreter->SetAllowFp16PrecisionForFp32(false);
-  interpreter->AllocateTensors();
-
-  std::cout << " Tensorflow Test " << endl;
-
-
-  cv::VideoCapture cap("./short.mp4"); 
-  if (!cap.isOpened()) {
-      std::cerr << "Error: Couldn't open input video!" << std::endl;
-      return -1;
-  }
-
-  int frame_width = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_WIDTH));
-  int frame_height = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_HEIGHT));
-
-  // cv::VideoWriter output_video("./output.mp4", cv::VideoWriter::fourcc('X', '2', '6', '4'), 25, cv::Size(frame_width, frame_height));
-  // cv::VideoWriter output_video("./output_video.mp4", cv::VideoWriter::fourcc('M', 'P', '4', 'V'), 25, cv::Size(frame_width, frame_height));
-  // cv::VideoWriter video("output.avi",CV_FOURCC('M','J','P','G'),25, Size(frame_width,frame_height));
-  cv::VideoWriter video("output_short.avi", cv::VideoWriter::fourcc('M','J','P','G'), 25, Size(frame_width,frame_height));
-
-  if (!video.isOpened()) {
-      std::cerr << "Error: Couldn't create output video!" << std::endl;
-      return -1;
-  }
-
-  cv::Mat prev_frame, current_frame;
-  cv::Mat result_frame; // Store the result frame with bounding boxes
-
-  cap >> current_frame;
-
-  float addition=1;
-
-  // std::vector<std::vector<float>> first1 = process_4(interpreter,current_frame);
-
-
-  // std::vector<std::vector<float>> first_id1=output_id(current_frame, first1);
-  // std::map<int, std::vector<float>> ids1=generateIds(first_id1);
-
-
-  std::vector<std::vector<float>> results1 = process_4(interpreter,current_frame);
-
- 
-  std::vector<std::vector<float>> output_id1=output_id(current_frame, results1);
-
-  generateIds(&results1);
-  update_lastseen(&results1);
-  
-  std::chrono::time_point<std::chrono::system_clock> beg, start, end, done, nmsdone;
-  std::chrono::duration<double> elapsed_seconds;
-
-
-
-  while (true) {
-    
-    prev_frame = current_frame.clone();
-
-    cap >> current_frame;
-    
-
-    if (current_frame.empty()) {
-        break; // End of video
-    }
-
-    if (!prev_frame.empty()) {
-
-      std::vector<std::vector<float>> results2 = process_4(interpreter,current_frame);
-
-    
-      std::vector<std::vector<float>> output_id2=output_id(current_frame, results2);
-
-
-      start = std::chrono::system_clock::now();
-      compare(
-        prev_frame, &results1,output_id1,
-        current_frame, &results2,output_id2, &addition
-      );
-      end = std::chrono::system_clock::now();
-      elapsed_seconds = end - start;
-      printf("The time for compare was s: %.10f\n", elapsed_seconds.count());
-
-      output_id2=output_id(current_frame, results2);
-
-      cv::Mat current_result=plotBboxes(current_frame, results2, coco_names, "./output2.jpg");
-
-      video.write(current_result);
-
-      update_lastseen(&results2);
-
-      results1=results2;
-      output_id1=output_id2;
-
-    }
-
-    // Break the loop if the user presses 'q'
-    if (cv::waitKey(1) == 'q') {
-        break;
-    }
-
-  }
-  // When everything done, release the video capture and write object
-  cap.release();
-  video.release();
- 
-  // Closes all the frames
-  destroyAllWindows();
-
-
-  // for(int i=0;i<moved_list.size();i++){
-  //   std::cout << moved_list[i] << std::endl;
-  // }
-
-
-  return 0;
-
-
-}
-
 
 
