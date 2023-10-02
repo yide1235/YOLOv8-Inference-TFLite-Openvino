@@ -83,129 +83,64 @@ using TfLiteDelegatePtrMap = std::map<std::string, TfLiteDelegatePtr>;
 typedef cv::Point3_<float> Pixel;
 
 
-// std::vector<int> motion_detection_pair(const std::vector<vector<float>>& results1, const std::map<int, std::vector<float>>& ids1,
-// const std::vector<vector<float>>& results2, const std::map<int, std::vector<float>>& ids2, int move_threshold, float ratio_threshold){
+std::vector<int> motion_detection_pair(const std::vector<vector<float>>& results1, 
+const std::vector<vector<float>>& results2, int move_threshold, float ratio_threshold){
+  std::vector<int> results;
+  for(int i=0;i< results1.size(); i++){
+    for(int j=0;j<results2.size();j++){
+      //                 0,1,2,3,  4,           5,       6,         7,     8,          9
+      //result is become 4bbox, 1confidence, 1classid, 1lastseen, 1id, 1iffindforco, 1updatedco/svd score
+      bool moved=false;
+      if((results1[i][7]==results2[j][7])&&(results1[i][8]!=-1)&&(results2[j][8]!=-1)){
 
-//   std::vector<int> results;
+        std::vector<float> i_box;//ids2
+        std::vector<float> corresp_box;//ids1
 
-//   assert(results1.size()==ids1.size());
-//   assert(results2.size()==ids2.size());
+        for(int m=0;m<4;m++){
+          int each2=static_cast<int>(std::round(results2[j][m]));
+          i_box.push_back(each2);
+        }
 
-//   if(results1.size()>results2.size()){
-//     //ids1 is the longer one with [0] euqal to index
-//     //then traverse ids2
-//     // Traverse the map using a range-based for loop
-//     for(int i=0;i< results2.size(); i++){
-//       auto it= ids2.find(i);
-//       if(it!=ids2.end()){
-//         const std::vector<float>& values = it->second;//i is the index at ids2
-//         int corresp=static_cast<int>(values[0]);//corresp is the index at ids1
+        for(int m=0;m<4;m++){
+          int each2=static_cast<int>(std::round(results1[i][m]));
+          corresp_box.push_back(each2);
+        }
 
-//         //now the index is i and corresp, compare the size
-//         bool moved=false;
-//         if(corresp!=-1){
-//           std::vector<float> i_box;//ids2
-//           std::vector<float> corresp_box;//ids1
+        //check moved
+        int i_x_mid=static_cast<int>(std::round(i_box[2]-i_box[0])/2)+i_box[0];
+        int i_y_mid=static_cast<int>(std::round(i_box[3]-i_box[1])/2)+i_box[1];
 
-//           for(int m=0;m<4;m++){
-//             int each2=static_cast<int>(std::round(results2[i][m]));
-//             i_box.push_back(each2);
-//           }
+        int corresp_x_mid=static_cast<int>(std::round(corresp_box[2]-corresp_box[0])/2)+corresp_box[0];
+        int corresp_y_mid=static_cast<int>(std::round(corresp_box[3]-corresp_box[1])/2)+corresp_box[1];
 
-//           for(int m=0;m<4;m++){
-//             int each2=static_cast<int>(std::round(results1[corresp][m]));
-//             corresp_box.push_back(each2);
-//           }
+        
+        float i_ratio=(i_box[2]-i_box[0])/(i_box[3]-i_box[1]);
 
-//           //check moved
-//           int i_x_mid=static_cast<int>(std::round(i_box[2]-i_box[0])/2)+i_box[0];
-//           int i_y_mid=static_cast<int>(std::round(i_box[3]-i_box[1])/2)+i_box[1];
+        float corresp_ratio=(corresp_box[2]-corresp_box[0])/(corresp_box[3]-corresp_box[1]);
 
-//           int corresp_x_mid=static_cast<int>(std::round(corresp_box[2]-corresp_box[0])/2)+corresp_box[0];
-//           int corresp_y_mid=static_cast<int>(std::round(corresp_box[3]-corresp_box[1])/2)+corresp_box[1];
+        if((i_ratio/corresp_ratio>ratio_threshold)&&((std::abs(corresp_x_mid-i_x_mid)>move_threshold)||(std::abs(corresp_y_mid-i_y_mid)>move_threshold))){
+          moved=true;
+        }
+        // std::cout << std::abs((i_box[2]-i_box[0])*(i_box[3]-i_box[1])) << std::abs((corresp_box[2]-corresp_box[0])*(corresp_box[3]-corresp_box[1])) << std::endl;
+        // assert(1==0);
+        if((0.75> std::abs(std::abs((i_box[2]-i_box[0])*(i_box[3]-i_box[1]))/std::abs((corresp_box[2]-corresp_box[0])*(corresp_box[3]-corresp_box[1]))))||
+        (1.25< std::abs(std::abs((i_box[2]-i_box[0])*(i_box[3]-i_box[1]))/std::abs((corresp_box[2]-corresp_box[0])*(corresp_box[3]-corresp_box[1]))))){
+          moved=false;
+        }
+        // std::cout << "trackingis is: "<< " " << i << " " << j << std::abs(corresp_x_mid-i_x_mid) << " " << std::abs(corresp_y_mid-i_y_mid) << " " << i_ratio/corresp_ratio << " "<< std::abs(std::abs((i_box[2]-i_box[0])*(i_box[3]-i_box[1]))/std::abs((corresp_box[2]-corresp_box[0])*(corresp_box[3]-corresp_box[1]))) << std::endl;
+      }
 
-          
-//           float i_ratio=(i_box[2]-i_box[0])/(i_box[3]-i_box[1]);
+      if(moved){
+        results.push_back(results2[j][7]);//i is the same with corresp
+      }
+    }
+    
+    
+  }
 
-//           float corresp_ratio=(corresp_box[2]-corresp_box[0])/(corresp_box[3]-corresp_box[1]);
-
-//           if((i_ratio/corresp_ratio>ratio_threshold)&&((std::abs(corresp_x_mid-i_x_mid)>move_threshold)||(std::abs(corresp_y_mid-i_y_mid)>move_threshold))){
-//             moved=true;
-//           }
-//           // std::cout << std::abs((i_box[2]-i_box[0])*(i_box[3]-i_box[1])) << std::abs((corresp_box[2]-corresp_box[0])*(corresp_box[3]-corresp_box[1])) << std::endl;
-//           // assert(1==0);
-//           if((0.75> std::abs(std::abs((i_box[2]-i_box[0])*(i_box[3]-i_box[1]))/std::abs((corresp_box[2]-corresp_box[0])*(corresp_box[3]-corresp_box[1]))))||
-//           (1.25< std::abs(std::abs((i_box[2]-i_box[0])*(i_box[3]-i_box[1]))/std::abs((corresp_box[2]-corresp_box[0])*(corresp_box[3]-corresp_box[1]))))){
-//             moved=false;
-//           }
-//           std::cout << "class is: "<< " " << corresp << " " << std::abs(corresp_x_mid-i_x_mid) << " " << std::abs(corresp_y_mid-i_y_mid) << " " << i_ratio/corresp_ratio << " "<< std::abs(std::abs((i_box[2]-i_box[0])*(i_box[3]-i_box[1]))/std::abs((corresp_box[2]-corresp_box[0])*(corresp_box[3]-corresp_box[1]))) << std::endl;
-//         }
-
-//         if(moved){
-//           results.push_back(corresp);//i is the same with corresp
-//         }
-//       }
-//     }
-
-//   }else{
-//     //ids2 is [i]==index
-//     //travers ids1
-
-//     for(int i=0;i< results1.size(); i++){
-//       auto it= ids1.find(i);
-//       if(it!=ids1.end()){
-//         const std::vector<float>& values = it->second;//i is the index at ids1
-//         int corresp=static_cast<int>(values[0]);//corresp is the index at ids2
-
-//         //now the index is i and corresp, compare the size
-//         bool moved=false;
-//         if(corresp!=-1){
-//           std::vector<float> i_box;//ids1
-//           std::vector<float> corresp_box;//ids2
-
-//           for(int m=0;m<4;m++){
-//             int each2=static_cast<int>(std::round(results1[i][m]));
-//             i_box.push_back(each2);
-//           }
-
-//           for(int m=0;m<4;m++){
-//             int each2=static_cast<int>(std::round(results2[corresp][m]));
-//             corresp_box.push_back(each2);
-//           }
-
-//           //check moved
-//           int i_x_mid=static_cast<int>(std::round(i_box[2]-i_box[0])/2)+i_box[0];
-//           int i_y_mid=static_cast<int>(std::round(i_box[3]-i_box[1])/2)+i_box[1];
-
-//           int corresp_x_mid=static_cast<int>(std::round(corresp_box[2]-corresp_box[0])/2)+corresp_box[0];
-//           int corresp_y_mid=static_cast<int>(std::round(corresp_box[3]-corresp_box[1])/2)+corresp_box[1];
-
-
-//           float i_ratio=(i_box[2]-i_box[0])/(i_box[3]-i_box[1]);
-
-//           float corresp_ratio=(corresp_box[2]-corresp_box[0])/(corresp_box[3]-corresp_box[1]);
-
-//           if((i_ratio/corresp_ratio>ratio_threshold)&& ((std::abs(corresp_x_mid-i_x_mid)>move_threshold)||(std::abs(corresp_y_mid-i_y_mid)>move_threshold))){
-//             moved=true;
-//           }
-//           if((0.25> std::abs(std::abs((i_box[2]-i_box[0])*(i_box[3]-i_box[1]))/std::abs((corresp_box[2]-corresp_box[0])*(corresp_box[3]-corresp_box[1]))))||
-//           (1.25< std::abs(std::abs((i_box[2]-i_box[0])*(i_box[3]-i_box[1]))/std::abs((corresp_box[2]-corresp_box[0])*(corresp_box[3]-corresp_box[1]))))){
-//             moved=false;
-//           }
-//           std::cout << "class is: "<< " " << corresp << " " << std::abs(corresp_x_mid-i_x_mid) << " " << std::abs(corresp_y_mid-i_y_mid) << " " << i_ratio/corresp_ratio << " "<< std::abs(std::abs((i_box[2]-i_box[0])*(i_box[3]-i_box[1]))/std::abs((corresp_box[2]-corresp_box[0])*(corresp_box[3]-corresp_box[1]))) << std::endl;
-//         }
-
-//         if(moved){
-//           results.push_back(corresp);//i is the same with corresp
-//         }
-
-
-//       }
-//     }
-//   }
-//   return results;
+  return results;
  
-// }
+}
 
 
 
@@ -214,11 +149,11 @@ auto mat_process(cv::Mat src, uint width, uint height) -> cv::Mat
 {
   // convert to float; BGR -> RGB
   cv::Mat dst2;
-  cout << "Creating dst" << endl;
+  std::cout << "Creating dst" << endl;
   // src.convertTo(dst, CV_32FC3);
-  cout << "Creating dst2" << endl;
+  std::cout << "Creating dst2" << endl;
   cv::cvtColor(src, dst2, cv::COLOR_BGR2RGB);
-  cout << "Creating dst3" << endl;
+  std::cout << "Creating dst3" << endl;
 
 
   cv::Mat normalizedImage(dst2.rows, dst2.cols, CV_32FC3);
@@ -481,7 +416,7 @@ std::vector<std::vector<float>> process_4(const std::unique_ptr<tflite::Interpre
 
 
 
-  cout << " Got model " << endl;
+  std::cout << " Got model " << endl;
   // get input & output layer
   TfLiteTensor *input_tensor = interpreter->tensor(interpreter->inputs()[0]);
   // cout << " Got input " << endl;
@@ -512,7 +447,7 @@ std::vector<std::vector<float>> process_4(const std::unique_ptr<tflite::Interpre
   // interpreter->SetAllowFp16PrecisionForFp32(true);
 
   start = std::chrono::system_clock::now();
-  cout << " GOT INPUT IMAGE " << endl;
+  std::cout << " GOT INPUT IMAGE " << endl;
   
   // flatten rgb image to input layer.
   // float* input_data = interpreter->typed_input_tensor<float>(0);
@@ -697,7 +632,7 @@ std::vector<std::vector<float>> process_4(const std::unique_ptr<tflite::Interpre
 
 
 //simply copy objects here
-std::vector<std::vector<float>> output_id(const cv::Mat& img, const std::vector<std::vector<float>>& results){
+std::vector<std::vector<float>> output_id(const cv::Mat& img, std::vector<std::vector<float>>& results){
 
     // cv::Mat img = cv::imread(img_path);
     // if (img.empty()) {
@@ -1145,7 +1080,9 @@ void compare(
     const cv::Mat& img1, std::vector<std::vector<float>>* results1,
     const std::vector<std::vector<float>>& unique_ids1,
     const cv::Mat& img2, std::vector<std::vector<float>>* results2, 
-    const std::vector<std::vector<float>>& unique_ids2, float* addition) 
+    const std::vector<std::vector<float>>& unique_ids2, float* addition, std::vector<int>* id_list,
+    const std::vector<float>& myList
+    ) 
 {
 
 
@@ -1237,7 +1174,12 @@ void compare(
           (*results2)[i].push_back(0.0f);//result6
           //note this line could lead error, check at last
           (*results2)[i].push_back(static_cast<float>(std::max((*results1).size(),(*results2).size() ))+(*addition));//result6
+          auto it = std::find(myList.begin(), myList.end(), (*results2)[i][5]);
+          if(it != myList.end()) {
+            (*id_list).push_back(static_cast<float>(std::max((*results1).size(),(*results2).size() ))+(*addition));}
+          
           (*addition)++;
+
           (*results2)[i].push_back(-1.0f);
           (*results2)[i].push_back(0.0f);
       }
@@ -1280,15 +1222,30 @@ void compare(
 
             if ((*results2)[it1][9] > (*results2)[it2][9]) {
                 (*results2)[it1][7] =  static_cast<float>(std::max((*results1).size(),(*results2).size() ))+(*addition);
+                auto it = std::find(myList.begin(), myList.end(), (*results2)[it1][5]);
+                if(it != myList.end()){
+                  (*id_list).push_back(static_cast<float>(std::max((*results1).size(),(*results2).size() ))+(*addition));
+                }
+                
                 (*addition)++;
             } else {
-                (*results2)[it1][7] =  static_cast<float>(std::max((*results1).size(),(*results2).size() ))+(*addition);
+                (*results2)[it2][7] =  static_cast<float>(std::max((*results1).size(),(*results2).size() ))+(*addition);
+                auto it = std::find(myList.begin(), myList.end(), (*results2)[it2][5]);
+                if(it != myList.end()){
+                  (*id_list).push_back(static_cast<float>(std::max((*results1).size(),(*results2).size() ))+(*addition));
+                }
+                
                 (*addition)++;
             }
           }
         } else {//if they are different class but got the same id, shouldnt happen when assign them
             if ((*results2)[it1][8] != -1 && (*results2)[it2][8] != -1) {
               (*results2)[it1][7] =  static_cast<float>(std::max((*results1).size(),(*results2).size() ))+(*addition);
+              auto it = std::find(myList.begin(), myList.end(), (*results2)[it1][5]);
+              if(it != myList.end()){
+                (*id_list).push_back(static_cast<float>(std::max((*results1).size(),(*results2).size() ))+(*addition));
+              }
+              
               (*addition)++;
             }
         }
@@ -1446,11 +1403,21 @@ void compare(
           
           if((*results2)[q][9]<=(*results2)[p][9]){
             (*results2)[p][7]=static_cast<float>(std::max((*results1).size(),(*results2).size() ))+(*addition);
+            auto it = std::find(myList.begin(), myList.end(), (*results2)[p][5]);
+            if(it != myList.end()){
+              (*id_list).push_back(static_cast<float>(std::max((*results1).size(),(*results2).size() ))+(*addition));
+            }
+            
             (*addition)++;
             min_index=q;
             //just consider p is the new coming one, but it assigned by svd wrong, so dont need to do anything with the results1[p]
           }else{
             (*results2)[q][0]=static_cast<float>(std::max((*results1).size(),(*results2).size() ))+(*addition);
+            auto it = std::find(myList.begin(), myList.end(), (*results2)[q][5]);
+            if(it != myList.end()){
+              (*id_list).push_back(static_cast<float>(std::max((*results1).size(),(*results2).size() ))+(*addition));
+            }
+            
             (*addition)++;
             min_index=p;
 
@@ -1477,25 +1444,25 @@ void compare(
   //   }
   // }
   
-  std::cout << "-------------------final " << std::endl;
+  // std::cout << "-------------------final " << std::endl;
   
-  for (const auto& innerVector : (*results1)) {
-      // Loop through the inner vector and print its elements
-      for (const float& value : innerVector) {
-          std::cout << value << " ";
-      }
-      std::cout << std::endl; // Print a newline after each inner vector
-  }
+  // for (const auto& innerVector : (*results1)) {
+  //     // Loop through the inner vector and print its elements
+  //     for (const float& value : innerVector) {
+  //         std::cout << value << " ";
+  //     }
+  //     std::cout << std::endl; // Print a newline after each inner vector
+  // }
 
-  std::cout << "----------- " << std::endl;
-  for (const auto& innerVector : (*results2)) {
-      // Loop through the inner vector and print its elements
-      for (const float& value : innerVector) {
-          std::cout << value << " ";
-      }
-      std::cout << std::endl; // Print a newline after each inner vector
-  }
-  std::cout << "--------------------final " << std::endl;
+  // std::cout << "----------- " << std::endl;
+  // for (const auto& innerVector : (*results2)) {
+  //     // Loop through the inner vector and print its elements
+  //     for (const float& value : innerVector) {
+  //         std::cout << value << " ";
+  //     }
+  //     std::cout << std::endl; // Print a newline after each inner vector
+  // }
+  // std::cout << "--------------------final " << std::endl;
 
   
 }
@@ -1514,8 +1481,6 @@ void update_lastseen(std::vector<std::vector<float>>* results){
 
     
 }
-
-
 
 
 cv::Scalar hex2rgb(const std::string& h) {
@@ -1557,7 +1522,7 @@ cv::Mat plotOneBox(const std::vector<float>& x, cv::Mat im, cv::Scalar color = c
 }
 
 void plotBboxes(const cv::Mat& img, const std::vector<std::vector<float>>& results,
-                const std::vector<std::string>& coco_names, const std::string& savePath) {
+                const std::vector<std::string>& coco_names, const std::string& savePath, const std::vector<int>& id_list) {
     // cv::Mat im0 = cv::imread(imgPath);
     cv::Mat im0=img;
     for (int i = 0; i < results.size(); ++i) {
@@ -1575,10 +1540,23 @@ void plotBboxes(const cv::Mat& img, const std::vector<std::vector<float>>& resul
 
         int trackingid = static_cast<int>(results[i][7]);
 
+
+
+
         std::stringstream ss;
         ss << std::fixed << std::setprecision(2) << confidence;
         std::string formattedValue = ss.str();
-        std::string label = clsName + "" + std::to_string(trackingid) + " " + formattedValue;
+
+        auto it = std::find(id_list.begin(), id_list.end(), trackingid);
+        std::string label;
+        if (it != id_list.end()) {
+            // Element found
+            label = clsName + "" + std::to_string(trackingid) + "motion" + formattedValue;
+        } else {
+            // Element not found
+            label = clsName + "" + std::to_string(trackingid) + " " + formattedValue;
+        }
+        
         
 
         cv::Scalar color = getColor(clsId, true);
@@ -1600,15 +1578,8 @@ void plotBboxes(const cv::Mat& img, const std::vector<std::vector<float>>& resul
 }
 
 
+ // this is for inferencing on video, two frames per second
 
-
-
-
-
-
-
-
-// // // // this is for inferencing on video:
 int main(int argc, char **argv)
 {
   std::vector<std::string> coco_names = {
@@ -1622,28 +1593,28 @@ int main(int argc, char **argv)
       "cell phone", "microwave", "oven", "toaster", "sink", "refrigerator", "book", "clock", "vase", "scissors",
       "teddy bear", "hair drier", "toothbrush"
   };
+  //motion object: 0,1,2,3,5,7
+  std::vector<float> myList={0.0, 1.0, 2.0, 3.0, 5.0, 7.0};
   // create model
   std::unique_ptr<tflite::FlatBufferModel> model =
       tflite::FlatBufferModel::BuildFromFile("yolov8l_integer_quant.tflite");
   
-  // auto ext_delegate_option = TfLiteExternalDelegateOptionsDefault("/usr/lib/libvx_delegate.so");
-  // auto ext_delegate_ptr = TfLiteExternalDelegateCreate(&ext_delegate_option);
+  auto ext_delegate_option = TfLiteExternalDelegateOptionsDefault("/usr/lib/libvx_delegate.so");
+  auto ext_delegate_ptr = TfLiteExternalDelegateCreate(&ext_delegate_option);
   tflite::ops::builtin::BuiltinOpResolver resolver;
   std::unique_ptr<tflite::Interpreter> interpreter;
   tflite::InterpreterBuilder(*model, resolver)(&interpreter);
-  // interpreter->ModifyGraphWithDelegate(ext_delegate_ptr);
+  interpreter->ModifyGraphWithDelegate(ext_delegate_ptr);
   interpreter->SetAllowFp16PrecisionForFp32(false);
   interpreter->AllocateTensors();
-  cv::VideoCapture cap("./11s.mp4"); 
+  cv::VideoCapture cap("./short.mp4"); 
   if (!cap.isOpened()) {
       std::cerr << "Error: Couldn't open input video!" << std::endl;
       return -1;
   }
-  int frame_width = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_WIDTH));
-  int frame_height = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_HEIGHT));
+  // int frame_width = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_WIDTH));
+  // int frame_height = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_HEIGHT));
   int fps = static_cast<int>(cap.get(cv::CAP_PROP_FPS));
-  // int totalFrames = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_COUNT));
-  int framesPerSecond = fps;
   float addition=1;
   float drop_threshold=20;
   std::chrono::time_point<std::chrono::system_clock> beg, start, end, done, nmsdone;
@@ -1652,133 +1623,133 @@ int main(int argc, char **argv)
   std::vector<std::vector<float>> output_id1;
   std::vector<std::vector<float>> results2;
   std::vector<std::vector<float>> output_id2;
+  std::vector<int> id_list;
+  std::vector<int> moved_list;
   cv::Mat last_frame;
-  // std::cout << "====" << totalFrames<< std::endl;
+  int count=0;
+  cv::Mat frame1;
+  cv::Mat frame2;
 
-
-  int totalFrames = 0;
-
-  // Loop through all frames in the video
-  while (true) {
-      cv::Mat frame;
-      // Read a frame from the video
-      if (!cap.read(frame)) {
-          // If the frame couldn't be read, break the loop
-          break;
-      }
-      // Increment the total frame count
-      totalFrames++;
+  cap >> frame1;
+  for(int i=0;i<fps;i++){
+    cap>>frame2;
+    count++;
+    if (frame2.empty()) {
+      break; 
+    }
+  }
+  results1 = process_4(interpreter,frame1);
+  output_id1=output_id(frame1, results1);
+  generateIds(&results1);
+  update_lastseen(&results1);
+  results2 = process_4(interpreter,frame2);
+  output_id2=output_id(frame2, results2);
+  compare(
+    frame1, &results1,output_id1,
+    frame2, &results2,output_id2, &addition, &id_list, myList
+  );
+  
+  moved_list=motion_detection_pair(results1, results2, 72, 0.80);
+  for(int i=0;i<moved_list.size();i++){
+    auto it = std::find(id_list.begin(), id_list.end(), moved_list[i]);
+    if (it != id_list.end()) {
+        // Element found
+        //do nothing
+    } else {
+        // Element not found
+        id_list.push_back(moved_list[i]);
+    }
   }
 
-  // Output the total number of frames
-  std::cout << "Total number of frames in the video: " << totalFrames << std::endl;
+  end = std::chrono::system_clock::now();
+  output_id2=output_id(frame2, results2);
+  std::string outputFileName = "./out/output" + std::to_string(count) + ".jpg";
+  plotBboxes(frame2, results2, coco_names, outputFileName,id_list);
+  update_lastseen(&results2);
+  id_list.clear();
 
 
-  int i=0;
-    while(true){
-      std::cout << i << totalFrames << "-----" << std::endl;
-      if(i>totalFrames){
-        break;
+  last_frame=frame2;
+  while(true){
+    cap >> frame1;
+    for(int i=0;i<fps;i++){
+      cap>>frame2;
+      count++;
+      if (frame2.empty()) {
+        break; 
       }
-      if(i==0){
-        int frame1Number = i ;
-        int frame2Number = i + static_cast<int>(framesPerSecond)/2;
-        cap.set(cv::CAP_PROP_POS_FRAMES, frame1Number);
-        cv::Mat frame1;
-        cap >> frame1;
-        if (frame1.empty()) {
-          break; 
-        }
-        cap.set(cv::CAP_PROP_POS_FRAMES, frame2Number);
-        cv::Mat frame2;
-        cap >> frame2;
-        results1 = process_4(interpreter,frame1);
-        output_id1=output_id(frame1, results1);
-        generateIds(&results1);
-        update_lastseen(&results1);
-        std::vector<std::vector<float>> results2 = process_4(interpreter,frame2);
-        std::vector<std::vector<float>> output_id2=output_id(frame2, results2);
-        start = std::chrono::system_clock::now();
-        compare(
-          frame1, &results1,output_id1,
-          frame2, &results2,output_id2, &addition
-        );
-        end = std::chrono::system_clock::now();
-        elapsed_seconds = end - start;
-        printf("The time for compare was s: %.10f\n", elapsed_seconds.count());
-        output_id2=output_id(frame2, results2);
-        std::string outputFileName = "./out/output" + std::to_string(i) + ".jpg";
-        plotBboxes(frame2, results2, coco_names, outputFileName);
-        update_lastseen(&results2);
-        last_frame=frame2;
+    }
+    if (frame1.empty()) {
+      break; 
+    }
+    if (frame2.empty()) {
+      break; 
+    }
+    //last_frame, reuslts2, output_ids2
+    //do check with results2(previous frame) and results3
+    std::vector<std::vector<float>> results3 = process_4(interpreter,frame1);
+    std::vector<std::vector<float>> output_id3=output_id(frame1, results3);
+    compare(
+      last_frame, &results2,output_id2,
+      frame1, &results3,output_id3, &addition,&id_list, myList
+    );
+
+
+    moved_list=motion_detection_pair(results2, results3, 72, 0.80);
+    for(int i=0;i<moved_list.size();i++){
+      auto it = std::find(id_list.begin(), id_list.end(), moved_list[i]);
+      if (it != id_list.end()) {
+          // Element found
+          //do nothing
+      } else {
+          // Element not found
+          id_list.push_back(moved_list[i]);
       }
-      else
-        {
-        //last_frame, reuslts2, output_ids2
-        int frame1Number = i ;
-        int frame2Number = i + static_cast<int>(framesPerSecond)/2;
-        cap.set(cv::CAP_PROP_POS_FRAMES, frame1Number);
-        cv::Mat frame1;
-        cap >> frame1;
-        cap.set(cv::CAP_PROP_POS_FRAMES, frame2Number);
-        cv::Mat frame2;
-        cap >> frame2;
-        if (frame1.empty()) {
-          break;
-        }
-        //do check with results2(previous frame) and results3
-        std::vector<std::vector<float>> results3 = process_4(interpreter,frame1);
-        std::vector<std::vector<float>> output_id3=output_id(frame1, results3);
-        start = std::chrono::system_clock::now();
-        compare(
-          last_frame, &results2,output_id2,
-          frame1, &results3,output_id3, &addition
-        );
-        end = std::chrono::system_clock::now();
-        elapsed_seconds = end - start;
-        printf("The time for compare was s: %.10f\n", elapsed_seconds.count());
-        output_id3=output_id(frame1, results3);
-        update_lastseen(&results3);
-        //now compare results3(frame1) and resutls4(frame2), then pass the results to resutls2
-        std::vector<std::vector<float>> results4 = process_4(interpreter,frame2);
-        std::vector<std::vector<float>> output_id4=output_id(frame2, results4);
-        start = std::chrono::system_clock::now();
-        compare(
-          frame1, &results3,output_id3,
-          frame2, &results4,output_id4, &addition
-        );
-        end = std::chrono::system_clock::now();
-        elapsed_seconds = end - start;
-        printf("The time for compare was s: %.10f\n", elapsed_seconds.count());
-        output_id4=output_id(frame2, results4);
-        std::string outputFileName = "./out/output" + std::to_string(i) + ".jpg";
-        plotBboxes(frame2, results4, coco_names, outputFileName);
-        last_frame=frame2;
-        results2=results4;
-        output_id2=output_id4;
+    }
+
+
+    output_id3=output_id(frame1, results3);
+    update_lastseen(&results3);
+    //now compare results3(frame1) and resutls4(frame2), then pass the results to resutls2
+    std::vector<std::vector<float>> results4 = process_4(interpreter,frame2);
+    std::vector<std::vector<float>> output_id4=output_id(frame2, results4);
+    start = std::chrono::system_clock::now();
+    compare(
+      frame1, &results3,output_id3,
+      frame2, &results4,output_id4, &addition,&id_list, myList
+    );
+
+
+    moved_list=motion_detection_pair(results3, results4, 72, 0.80);
+    for(int i=0;i<moved_list.size();i++){
+      auto it = std::find(id_list.begin(), id_list.end(), moved_list[i]);
+      if (it != id_list.end()) {
+          // Element found
+          //do nothing
+      } else {
+          // Element not found
+          id_list.push_back(moved_list[i]);
       }
-      i=i+framesPerSecond;
+    }
+
+
+    end = std::chrono::system_clock::now();
+    elapsed_seconds = end - start;
+    printf("The time for compare was s: %.10f\n", elapsed_seconds.count());
+    output_id4=output_id(frame2, results4);
+    std::string outputFileName = "./out/output" + std::to_string(count) + ".jpg";
+
+
+
+    plotBboxes(frame2, results4, coco_names, outputFileName,id_list);
+    update_lastseen(&results4);
+    id_list.clear();
+    last_frame=frame2;
+    results2=results4;
+    output_id2=output_id4;
+
   }
-
-
-
-
-
-
-
-
-  // When everything done, release the video capture and write object
   cap.release();
-
-
-
-
-  cap.release();
-  // video.release();
- 
-  // Closes all the frames
-  // destroyAllWindows();
-
   return 0;
 
 }
@@ -1794,7 +1765,7 @@ int main(int argc, char **argv)
 
 
 
-//  // this is for inferencing on video:
+//  // this is for inferencing on video, continuous frames:
 // int main(int argc, char **argv)
 // {
 
@@ -1972,12 +1943,12 @@ int main(int argc, char **argv)
 //   std::unique_ptr<tflite::FlatBufferModel> model =
 //       tflite::FlatBufferModel::BuildFromFile("yolov8l_integer_quant.tflite");
   
-//   auto ext_delegate_option = TfLiteExternalDelegateOptionsDefault("/usr/lib/libvx_delegate.so");
-//   auto ext_delegate_ptr = TfLiteExternalDelegateCreate(&ext_delegate_option);
+//   // auto ext_delegate_option = TfLiteExternalDelegateOptionsDefault("/usr/lib/libvx_delegate.so");
+//   // auto ext_delegate_ptr = TfLiteExternalDelegateCreate(&ext_delegate_option);
 //   tflite::ops::builtin::BuiltinOpResolver resolver;
 //   std::unique_ptr<tflite::Interpreter> interpreter;
 //   tflite::InterpreterBuilder(*model, resolver)(&interpreter);
-//   interpreter->ModifyGraphWithDelegate(ext_delegate_ptr);
+//   // interpreter->ModifyGraphWithDelegate(ext_delegate_ptr);
 //   interpreter->SetAllowFp16PrecisionForFp32(false);
 //   interpreter->AllocateTensors();
 
@@ -1987,10 +1958,10 @@ int main(int argc, char **argv)
 //   // string imgf1="./person_compare/1.jpg";
 //   // string imgf2="./person_compare/2.jpg"; 
 
-//   string imgf1="./bus_compare2/1.jpg";
-//   string imgf2="./bus_compare2/2.jpg";
-//   string imgf3="./bus_compare2/3.jpg";
-//   string imgf4="./bus_compare2/4.jpg";
+//   // string imgf1="./bus_compare2/1.jpg";
+//   // string imgf2="./bus_compare2/2.jpg";
+//   string imgf1="./bus_compare2/3.jpg";
+//   string imgf2="./bus_compare2/4.jpg";
 
 //   // string imgf1="./bus_compare/0030.jpg";
 //   // string imgf2="./bus_compare/0060.jpg";
@@ -2032,63 +2003,6 @@ int main(int argc, char **argv)
 //       return 0;
 //   }
 
-//   cv::Mat img3 = cv::imread(imgf3);
-//   if (img3.empty()) {
-//       std::cerr << "Failed to load image." << std::endl;
-//       // You should return an empty cv::Mat or handle errors differently.
-//       return 0;
-//   }
-
-
-
-//   cv::Mat img4 = cv::imread(imgf4);
-//   if (img4.empty()) {
-//       std::cerr << "Failed to load image." << std::endl;
-//       // You should return an empty cv::Mat or handle errors differently.
-//       return 0;
-//   }
-  
-//   // cv::Mat img5 = cv::imread(imgf5);
-//   // if (img5.empty()) {
-//   //     std::cerr << "Failed to load image." << std::endl;
-//   //     // You should return an empty cv::Mat or handle errors differently.
-//   //     return 0;
-//   // }
-
-//   // cv::Mat img6 = cv::imread(imgf6);
-//   // if (img6.empty()) {
-//   //     std::cerr << "Failed to load image." << std::endl;
-//   //     // You should return an empty cv::Mat or handle errors differently.
-//   //     return 0;
-//   // }
-
-//   // cv::Mat img7 = cv::imread(imgf7);
-//   // if (img7.empty()) {
-//   //     std::cerr << "Failed to load image." << std::endl;
-//   //     // You should return an empty cv::Mat or handle errors differently.
-//   //     return 0;
-//   // }
-
-//   // cv::Mat img8 = cv::imread(imgf8);
-//   // if (img8.empty()) {
-//   //     std::cerr << "Failed to load image." << std::endl;
-//   //     // You should return an empty cv::Mat or handle errors differently.
-//   //     return 0;
-//   // }
-
-//   // cv::Mat img9 = cv::imread(imgf9);
-//   // if (img9.empty()) {
-//   //     std::cerr << "Failed to load image." << std::endl;
-//   //     // You should return an empty cv::Mat or handle errors differently.
-//   //     return 0;
-//   // }
-
-//   // cv::Mat img10 = cv::imread(imgf10);
-//   // if (img10.empty()) {
-//   //     std::cerr << "Failed to load image." << std::endl;
-//   //     // You should return an empty cv::Mat or handle errors differently.
-//   //     return 0;
-//   // }
 
 //   float addition=1;
 
@@ -2098,11 +2012,6 @@ int main(int argc, char **argv)
  
 //   std::vector<std::vector<float>> output_id1=output_id(img1, results1);
 
-
-//   // for(int i=0;i<results1.size();i++){
-//   //   results1[i].push_back(0.0);
-//   // }
-  
 
 
 
@@ -2138,224 +2047,10 @@ int main(int argc, char **argv)
 //   update_lastseen(&results2);
 
 
-
-
-
-//   std::vector<std::vector<float>> results3 = process_4(interpreter,img3);
-
- 
-//   std::vector<std::vector<float>> output_id3=output_id(img3, results3);
-
-
-
-//   start = std::chrono::system_clock::now();
-//   compare(
-//       img2, &results2,output_id2,
-//       img3, &results3,output_id3, &addition
-//   );
-//   end = std::chrono::system_clock::now();
-//   elapsed_seconds = end - start;
-//   printf("The time for compare was s: %.10f\n", elapsed_seconds.count());
-
-
-
-//   output_id3=output_id(img3, results3);
-
-//   plotBboxes(img3, results3, coco_names, "./output3.jpg");
-
-//   update_lastseen(&results3);
-
-
-
-
-
-
-
-
-
-//   std::vector<std::vector<float>> results4 = process_4(interpreter,img4);
-
- 
-//   std::vector<std::vector<float>> output_id4=output_id(img4, results4);
-
-
-//   start = std::chrono::system_clock::now();
-//   compare(
-//       img3, &results3,output_id3,
-//       img4, &results4,output_id4, &addition
-//   );
-//   end = std::chrono::system_clock::now();
-//   elapsed_seconds = end - start;
-//   printf("The time for compare was s: %.10f\n", elapsed_seconds.count());
-
-//   output_id4=output_id(img4, results4);
-
-//   plotBboxes(img4, results4, coco_names, "./output4.jpg");
-
-//   update_lastseen(&results4);
-
-
-
-
-
-
-
-//   // std::vector<std::vector<float>> results5 = process_4(interpreter,img5);
-
- 
-//   // std::vector<std::vector<float>> output_id5=output_id(img5, results5);
-//   // start = std::chrono::system_clock::now();
-//   // compare(
-//   //     img4, &results4,output_id4,
-//   //     img5, &results5,output_id5, &addition
-//   // );
-//   // end = std::chrono::system_clock::now();
-//   // elapsed_seconds = end - start;
-//   // printf("The time for compare was s: %.10f\n", elapsed_seconds.count());
-
-
-//   // output_id5=output_id(img5, results5);
-
-//   // plotBboxes(img5, results5, coco_names, "./output5.jpg");
-
-
-
-
-
-
-
-//   // std::vector<std::vector<float>> results6 = process_4(interpreter,img6);
-
- 
-//   // std::vector<std::vector<float>> output_id6=output_id(img6, results6);
-//   // start = std::chrono::system_clock::now();
-//   // compare(
-//   //     img5, &results5,output_id5,
-//   //     img6, &results6,output_id6, &addition
-//   // );
-//   // end = std::chrono::system_clock::now();
-//   // elapsed_seconds = end - start;
-//   // printf("The time for compare was s: %.10f\n", elapsed_seconds.count());
-
-
-//   // output_id6=output_id(img6, results6);
-
-//   // plotBboxes(img6, results6, coco_names, "./output6.jpg");
-
-
-
-
-
-
-//   // std::vector<std::vector<float>> results7 = process_4(interpreter,img7);
-
- 
-//   // std::vector<std::vector<float>> output_id7=output_id(img7, results7);
-//   // start = std::chrono::system_clock::now();
-//   // compare(
-//   //     img6, &results6,output_id6,
-//   //     img7, &results7,output_id7, &addition
-//   // );
-//   // end = std::chrono::system_clock::now();
-//   // elapsed_seconds = end - start;
-//   // printf("The time for compare was s: %.10f\n", elapsed_seconds.count());
-
-
-//   // output_id7=output_id(img7, results7);
-
-//   // plotBboxes(img7, results7, coco_names, "./output7.jpg");
-
-
-
-
-
-
-
-//   // std::vector<std::vector<float>> results8 = process_4(interpreter,img8);
-
- 
-//   // std::vector<std::vector<float>> output_id8=output_id(img8, results8);
-//   // start = std::chrono::system_clock::now();
-//   // compare(
-//   //     img7, &results7,output_id7,
-//   //     img8, &results8,output_id8, &addition
-//   // );
-//   // end = std::chrono::system_clock::now();
-//   // elapsed_seconds = end - start;
-//   // printf("The time for compare was s: %.10f\n", elapsed_seconds.count());
-
-
-
-//   // output_id8=output_id(img8, results8);
-
-//   // plotBboxes(img8, results8, coco_names, "./output8.jpg");
-
-
-
-
-
-
-
-//   // std::vector<std::vector<float>> results9 = process_4(interpreter,img9);
-
- 
-//   // std::vector<std::vector<float>> output_id9=output_id(img9, results9);
-//   // start = std::chrono::system_clock::now();
-//   // compare(
-//   //     img8, &results8,output_id8,
-//   //     img9, &results9,output_id9, &addition
-//   // );
-//   // end = std::chrono::system_clock::now();
-//   // elapsed_seconds = end - start;
-//   // printf("The time for compare was s: %.10f\n", elapsed_seconds.count());
-
-
-
-//   // output_id9=output_id(img9, results9);
-
-//   // plotBboxes(img9, results9, coco_names, "./output9.jpg");
-
-
-
-
-
-
-
-
-//   // std::vector<std::vector<float>> results10 = process_4(interpreter,img10);
-
- 
-//   // std::vector<std::vector<float>> output_id10=output_id(img10, results10);
-//   // start = std::chrono::system_clock::now();
-//   // compare(
-//   //     img9, &results9,output_id9,
-//   //     img10, &results10,output_id10, &addition
-//   // );
-//   // end = std::chrono::system_clock::now();
-//   // elapsed_seconds = end - start;
-//   // printf("The time for compare was s: %.10f\n", elapsed_seconds.count());
-
-
-
-//   // output_id10=output_id(img10, results10);
-
-//   // plotBboxes(img10, results10, coco_names, "./output10.jpg");
-
-
-
-
-
-
-
-
-//   // std::vector<int> moved_list=motion_detection_pair(results1, compare_result[0], results2, compare_result[1], 80, 0.80);
-//   // // std::vector<int> moved_list=motion_detection_pair(results1, compare_result[0], results2, compare_result[1], 10, 0.70);
-
-//   // for(int i=0;i<moved_list.size();i++){
-//   //   std::cout << moved_list[i] << std::endl;
-//   // }
-
-
+//   std::vector<int> moved_list=motion_detection_pair(results1, results2, 72, 0.80);
+//   for(int i=0;i<moved_list.size();i++){
+//     std::cout << moved_list[i] << std::endl;
+//   }
 //   return 0;
 
 
