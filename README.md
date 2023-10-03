@@ -12,6 +12,8 @@
 //the motion detection should include when a new motion object is coming up and when a normal object is 
 //tracled as motion, also use the threshold way for motion detection.
 
+//use ssim and motion differently
+
 
 ### Features
 - Object Tracks
