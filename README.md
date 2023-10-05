@@ -13,6 +13,7 @@
 //tracled as motion, also use the threshold way for motion detection.
 
 //use ssim and motion differently
+//only use ssim
 
 
 ### Features
