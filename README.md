@@ -62,3 +62,11 @@ https://github.com/yide1235/Yolov8-tracking-tensorflow-lite-CPP/assets/66981525/
 //$ g++ -I../tensorflow -ltensorflow_cc -c test.o `pkg-config --cflags --libs 
 opencv4`
 
+
+
+### At this project, some linux error I met: 
+error: /usr/lib/git-core/git-remote-https: symbol lookup error: /lib/x86_64-linux-gnu/libp11-kit.so.0: undefined symbol: ffi_type_pointer, version LIBFFI_BASE_7.0
+
+solution: 
+export LD_LIBRARY_PATH=/content/conda-env/lib:/usr/local/nvidia/lib:/usr/local/nvidia/lib64
+
