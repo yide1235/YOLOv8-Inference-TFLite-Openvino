@@ -1,8 +1,8 @@
 // Martin Kersner, m.kersner@gmail.com
 // 2016/12/19 
 
-#ifndef UTILS_HPP__
-#define UTILS_HPP__ 
+#ifndef NMS_UTILS_HPP__
+#define NMS_UTILS_HPP__ 
 
 #include <vector>
 #include <opencv2/opencv.hpp>

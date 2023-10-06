@@ -1,7 +1,7 @@
 // Martin Kersner, m.kersner@gmail.com
 // 2016/12/19 
 
-#include "utils.hpp"
+#include "include/util/nms_utils.hpp"
 using std::vector;
 
 cv::Rect vec_to_rect(const vector<float> & vec)

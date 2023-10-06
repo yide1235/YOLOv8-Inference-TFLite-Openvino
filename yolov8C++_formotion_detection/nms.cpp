@@ -2,7 +2,7 @@
 // 2016/12/18
 // C++ version of http://www.pyimagesearch.com/2015/02/16/faster-non-maximum-suppression-python/
 
-#include "nms.hpp"
+#include "include/util/nms.hpp"
 using std::vector;
 using cv::Rect;
 using cv::Point;
