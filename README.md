@@ -71,4 +71,4 @@ solution:
 export LD_LIBRARY_PATH=/content/conda-env/lib:/usr/local/nvidia/lib:/usr/local/nvidia/lib64
 
 //will work on the segmentation first
-
+//hope it can be solved
