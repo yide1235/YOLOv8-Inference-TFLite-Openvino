@@ -70,3 +70,5 @@ error: /usr/lib/git-core/git-remote-https: symbol lookup error: /lib/x86_64-linu
 solution: 
 export LD_LIBRARY_PATH=/content/conda-env/lib:/usr/local/nvidia/lib:/usr/local/nvidia/lib64
 
+//will work on the segmentation first
+
