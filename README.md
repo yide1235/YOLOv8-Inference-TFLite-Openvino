@@ -74,5 +74,7 @@ export LD_LIBRARY_PATH=/content/conda-env/lib:/usr/local/nvidia/lib:/usr/local/n
 //hope it can be solved
 
 //using original yolo repo:
-yolo export model=yolov8l.pt data=coco128.yaml format=tflite int8
+yolo export model=yolov8l.pt data=coco128.yaml format=tflite int32
+(the last one should be int32, using that generate yolov8l and yolov8x to see the results)
+
 
