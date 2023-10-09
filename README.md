@@ -76,5 +76,19 @@ export LD_LIBRARY_PATH=/content/conda-env/lib:/usr/local/nvidia/lib:/usr/local/n
 //using original yolo repo:
 yolo export model=yolov8l.pt data=coco128.yaml format=tflite int32
 (the last one should be int32, using that generate yolov8l and yolov8x to see the results)
+(some env mayhelp: pip install torch==2.0.1
+
+pip install torchaudio==2.0.2+cu118 torchdata==0.6.1 torchtext==0.15.2
+
+pip install torchvision --upgrade
+
+!pip install ultralytics
+
+!yolo export model=yolov8l-seg.pt format=onnx
+
+)
+
+
+
 
 
