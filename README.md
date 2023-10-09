@@ -87,6 +87,8 @@ pip install torchvision --upgrade
 
 yolo export model=yolov8l.pt data=coco128-seg.yaml format=tflite int32
 
+ yolo predict model=./yolov8x-seg_int8.tflite source='./download2.png'
+
 
 
 
