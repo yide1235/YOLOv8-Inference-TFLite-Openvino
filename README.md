@@ -72,3 +72,7 @@ export LD_LIBRARY_PATH=/content/conda-env/lib:/usr/local/nvidia/lib:/usr/local/n
 
 //will work on the segmentation first
 //hope it can be solved
+
+//using original yolo repo:
+yolo export model=yolov8l.pt data=coco128.yaml format=tflite int8
+
