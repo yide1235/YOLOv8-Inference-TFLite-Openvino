@@ -87,8 +87,19 @@ pip install torchvision --upgrade
 
 yolo export model=yolov8l.pt data=coco128-seg.yaml format=tflite int32
 
- yolo predict model=./yolov8x-seg_int8.tflite source='./download2.png'
+yolo predict model=./yolov8x-seg_int8.tflite source='./download2.png'
 
+-------
+
+somecode: from ultralytics import YOLO
+
+model_name = 'yolov8l-seg' #@param ["yolov8n-seg", "yolov8s-seg", "yolov8m-seg", "yolov8l-seg", "yolov8x-seg"]
+input_width = 640 #@param {type:"slider", min:32, max:4096, step:32}
+input_height = 640 #@param {type:"slider", min:32, max:4096, step:32}
+optimize_cpu = False
+
+model = YOLO(f"{model_name}.pt") 
+model.export(format="tflite", imgsz=[input_height,input_width], optimize=optimize_cpu, int8=True)
 
 
 
