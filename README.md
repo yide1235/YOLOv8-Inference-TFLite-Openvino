@@ -101,6 +101,8 @@ optimize_cpu = False
 model = YOLO(f"{model_name}.pt") 
 model.export(format="tflite", imgsz=[input_height,input_width], optimize=optimize_cpu, int8=True)
 
+//current converts pascal-part to yolo format
+
 
 
 
