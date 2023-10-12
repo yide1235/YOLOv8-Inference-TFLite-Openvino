@@ -103,6 +103,7 @@ model.export(format="tflite", imgsz=[input_height,input_width], optimize=optimiz
 
 //current converts pascal-part to yolo format
 
+//doing the training today
 
 
 
