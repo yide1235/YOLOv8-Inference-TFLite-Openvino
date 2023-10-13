@@ -52,7 +52,7 @@ export LD_LIBRARY_PATH=/content/conda-env/lib:/usr/local/nvidia/lib:/usr/local/n
 
 -------
 
-//using original yolo repo:
+//using original yolo repo for inference:
 
 (some env mayhelp: pip install torch==2.0.1
 
