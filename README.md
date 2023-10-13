@@ -107,7 +107,12 @@ model.export(format="tflite", imgsz=[input_height,input_width], optimize=optimiz
 
 //doing the training today
 
-//training cli: yolo task=segment mode=train model=yolov8l-seg.pt data=pascal-part-seg.yaml epochs=300 batch=8
+//connect to clearml: !pip install clearml
+!pip install clearml>=1.2.0
+!clearml-init
+
+
+//training cli: !yolo task=segment mode=train model=yolov8l-seg.pt data=pascal-part-seg.yaml epochs=300 batch=8
 
 //resume training cli example: !yolo task=segment mode=train resume model=./runs/segment/train6/weights/last.pt data=pascal-part-seg.yaml epochs=200 batch=12 
 
