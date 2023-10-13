@@ -1,19 +1,15 @@
 # yolov8-object-tracking
 #### Implementation of Yolov8l tracking with tflite in C++
 
+### yolov8_integer -> tracking for ssim and motion -> seg -> pascal-part-seg -> integrate_two_pipline
 
-### Phase:
+### Some explain of the tracking for motion detection:
+Integerated with video and motion detection, do frame1, frame2, then use frame2 id to do frame2 and frame3
+So for ssim, it is the matching algorithm between two images, may need to tune parameter when use.
 
-integerated with video and motion detection
-do frame1, frame2, then use frame2 id to do frame2 and frame3
-so for ssim, it is the matching algorithm between two images, may need to tune parameter when use
-for seq, just got a new one called yolov8forseq, the yolov8forseq is for motion detection, so for that part
+For seq, just got a new one called yolov8forseq, the yolov8forseq is for motion detection, so for that part
 the motion detection should include when a new motion object is coming up and when a normal object is 
 tracled as motion, also use the threshold way for motion detection.
-
-use ssim and motion differently
-
-The order i developed is yolov8_integer->tracking->ssim->motion->seg->pascal-part-seg->integrate_two_pipline
 
 
 ### Features
