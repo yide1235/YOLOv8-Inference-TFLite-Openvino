@@ -1,5 +1,7 @@
 # yolov8-object-tracking
-#### Implementation of Yolov8l tracking with tflite in C++
+#### Implementation of Yolov8l detection inference, tracking for motion and ssim pair, segmentation, human-part segmentation with tflite in C++
+
+-------
 
 ### yolov8_integer -> tracking for ssim and motion -> seg -> pascal-part-seg -> integrate_two_pipline
 
