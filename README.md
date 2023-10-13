@@ -105,6 +105,7 @@ model.export(format="tflite", imgsz=[input_height,input_width], optimize=optimiz
 
 //doing the training today
 
+//training cli: yolo task=segment mode=train model=yolov8l-seg.pt data=pascal-part-seg.yaml epochs=300 batch=8
 
 //resume training cli example: !yolo task=detect mode=train resume model=/content/drive/MyDrive/yolov8/training_results/helmets5/weights/last.pt data=/content/drive/MyDrive/yolov8/dataset.yaml epochs=100 imgsz=640 batch=8 project=/content/drive/MyDrive/yolov8/training_results name=helmets
 
