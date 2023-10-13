@@ -29,12 +29,6 @@ Tracking on video and a pair of image
 Human parts segmentation, fine-tune yolov8 to pascal-part
 ![](./assets/3.jpg)
 
-### References
-- https://github.com/abewley/sort
-- https://github.com/ultralytics/ultralytics
-- https://github.com/RizwanMunawar/yolov8-object-tracking.git
-
-
 
 ### C++run command figure out:
 //help running command
@@ -96,6 +90,14 @@ model.export(format="tflite", imgsz=[input_height,input_width], optimize=optimiz
 //training cli: !yolo task=segment mode=train model=yolov8l-seg.pt data=pascal-part-seg.yaml epochs=300 batch=8
 
 //resume training cli example: !yolo task=segment mode=train resume model=./runs/segment/train6/weights/last.pt data=pascal-part-seg.yaml epochs=200 batch=12 
+
+
+
+### References
+- https://github.com/abewley/sort
+- https://github.com/ultralytics/ultralytics
+- https://github.com/RizwanMunawar/yolov8-object-tracking.git
+
 
 
 
