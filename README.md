@@ -11,12 +11,6 @@ For seq, just got a new one called yolov8forseq, the yolov8forseq is for motion 
 the motion detection should include when a new motion object is coming up and when a normal object is 
 tracled as motion, also use the threshold way for motion detection.
 
-
-### Features
-- Object Tracks
-- Different Color for every track
-- Video/Image/WebCam/External Camera/IP Stream Supported
-
 ### Coming Soon
 - Selection of specific class ID for tracking
 - Development of dashboard for YOLOv8
