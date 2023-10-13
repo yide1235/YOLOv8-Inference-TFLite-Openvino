@@ -1,9 +1,9 @@
 # yolov8-object-tracking
 #### Implementation of Yolov8l detection inference, tracking for motion and ssim pair, segmentation, human-part segmentation with tflite in C++
 
--------
-
 ### yolov8_integer -> tracking for ssim and motion -> seg -> pascal-part-seg -> integrate_two_pipline
+
+-------
 
 ### Some explain of the tracking for motion detection:
 Integerated with video and motion detection, do frame1, frame2, then use frame2 id to do frame2 and frame3
@@ -13,6 +13,7 @@ For seq, just got a new one called yolov8forseq, the yolov8forseq is for motion 
 the motion detection should include when a new motion object is coming up and when a normal object is 
 tracled as motion, also use the threshold way for motion detection.
 
+-------
 ### Steps to run Code
 
 - Clone the repository
@@ -31,6 +32,7 @@ Tracking on video and a pair of image
 Human parts segmentation, fine-tune yolov8 to pascal-part
 ![](./assets/3.jpg)
 
+-------
 
 ### C++run command figure out:
 //help running command
@@ -39,6 +41,7 @@ Human parts segmentation, fine-tune yolov8 to pascal-part
 //$ g++ -I../tensorflow -ltensorflow_cc -c test.o `pkg-config --cflags --libs 
 opencv4`
 
+-------
 
 ### At this project, some linux error I met: 
 
@@ -47,11 +50,9 @@ solution:
 
 export LD_LIBRARY_PATH=/content/conda-env/lib:/usr/local/nvidia/lib:/usr/local/nvidia/lib64
 
-
+-------
 
 //using original yolo repo:
-
-(the last one should be int32, using that generate yolov8l and yolov8x to see the results)
 
 (some env mayhelp: pip install torch==2.0.1
 
@@ -65,9 +66,9 @@ yolo export model=yolov8l.pt data=coco128-seg.yaml format=tflite int32
 
 yolo predict model=./yolov8x-seg_int8.tflite source='./download2.png'
 
+-------
 
-
-
+Now train it for human part segmentation
 Somecode: from ultralytics import YOLO
 
 model_name = 'yolov8l-seg' #@param ["yolov8n-seg", "yolov8s-seg", "yolov8m-seg", "yolov8l-seg", "yolov8x-seg"]
@@ -91,6 +92,7 @@ model.export(format="tflite", imgsz=[input_height,input_width], optimize=optimiz
 
 //resume training cli example: !yolo task=segment mode=train resume model=./runs/segment/train6/weights/last.pt data=pascal-part-seg.yaml epochs=200 batch=12 
 
+-------
 
 
 ### References
