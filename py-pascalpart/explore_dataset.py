@@ -127,6 +127,8 @@ if __name__ == "__main__":
         # print(annotations["objects"])
         image_width, image_height = img.size
 
+        img_w=cv2.imread(os.path.join(args.images_folder, image_filename))
+
         # print(image_width, image_height)
 
         # image_filename=image_filename.replace(".jpg","")
@@ -163,7 +165,7 @@ if __name__ == "__main__":
                         bodypart_mask_array = np.array(bodypart_mask) * 255  # Convert bodypart_mask to NumPy array and scale to 0-255 range
 
                         # Save the images using cv2.imwrite
-                        cv2.imwrite(f"./datasets/images/train2017/{image_filename}", np.array(img))  # Save img as a JPEG image
+                        cv2.imwrite(f"./datasets/images/train2017/{image_filename}", img_w)  # Save img as a JPEG image
 
                         # cv2.imwrite(f"./{image_filename}_mask.jpg", mask_array)  # Save mask as a grayscale image
                         part_name=body_part["part_name"]
