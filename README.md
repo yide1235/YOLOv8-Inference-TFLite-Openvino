@@ -1,7 +1,14 @@
-# yolov8-object-tracking
+# yolov8-object-tracking-segmentation-C++-tflite
+
 #### Implementation of Yolov8l detection inference, tracking for motion and ssim pair, segmentation, human-part segmentation with tflite in C++
 
 ### yolov8_integer -> tracking for ssim and motion -> seg -> pascal-part-seg -> integrate_two_pipline
+
+Yolov8 python inference                             --> ./yolov8python_orign
+Yolov8 python/C++ tracking for ssim and motion      --> ./yolov8python_tracking  ./yolov8C++_ssim ./yolov8C++_formotion_detection
+Yolov8 python segmentation                          --> ./yolov8python_seg
+Yolov8 python segmentation for human part           --> ./py-pascalpart
+Install tflite and C++                              --> ./env_install
 
 -------
 
