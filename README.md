@@ -11,31 +11,23 @@ For seq, just got a new one called yolov8forseq, the yolov8forseq is for motion 
 the motion detection should include when a new motion object is coming up and when a normal object is 
 tracled as motion, also use the threshold way for motion detection.
 
-### Coming Soon
-- Selection of specific class ID for tracking
-- Development of dashboard for YOLOv8
-
 ### Steps to run Code
 
 - Clone the repository
 ```
 https://github.com/yide1235/Yolov8-tracking-tflite-CPP.git
 ```
-
 ### Results
 Initial result using yolov8l quantized tflite pretrain model for stereo images(the first index is tracking id, the second is confidence, the color of the box is the class, you can notice this is two frame from a sequence):
 
 https://github.com/yide1235/Yolov8-tracking-tensorflow-lite-CPP/assets/66981525/530f5db2-8c15-4bbe-bf1e-fc55c073045e
-### Tracking on video and a pair of image
+
+Tracking on video and a pair of image
 ![](./assets/1.jpg)
 ![](./assets/2.jpg)
 
-### Human parts segmentation, fine-tune yolov8 to pascal-part
+Human parts segmentation, fine-tune yolov8 to pascal-part
 ![](./assets/3.jpg)
-
-
-
-
 
 ### References
 - https://github.com/abewley/sort
