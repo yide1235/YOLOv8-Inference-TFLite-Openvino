@@ -120,6 +120,8 @@ if __name__ == '__main__':
 
 -------
 
+now training on colab
+
 
 ### References
 - https://github.com/abewley/sort
