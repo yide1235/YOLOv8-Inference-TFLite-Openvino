@@ -14,7 +14,7 @@ tracled as motion, also use the threshold way for motion detection.
 
 use ssim and motion differently
 
-The order i developed is yolov8_integer->tracking->ssim->motion->seg->integrate_all
+The order i developed is yolov8_integer->tracking->ssim->motion->seg->pascal-part-seg->integrate_two_pipline
 
 
 ### Features
