@@ -34,21 +34,18 @@ Human parts segmentation, fine-tune yolov8 to pascal-part
 //help running command
 //my part dont need tflite
 //$ g++ -I../tensorflow -ltensorflow_cc -c test.cpp `pkg-config --cflags --libs opencv4`
-
-
 //$ g++ -I../tensorflow -ltensorflow_cc -c test.o `pkg-config --cflags --libs 
 opencv4`
 
 
-
 ### At this project, some linux error I met: 
-error: /usr/lib/git-core/git-remote-https: symbol lookup error: /lib/x86_64-linux-gnu/libp11-kit.so.0: undefined symbol: ffi_type_pointer, version LIBFFI_BASE_7.0
 
+error: /usr/lib/git-core/git-remote-https: symbol lookup error: /lib/x86_64-linux-gnu/libp11-kit.so.0: undefined symbol: ffi_type_pointer, version LIBFFI_BASE_7.0
 solution: 
+
 export LD_LIBRARY_PATH=/content/conda-env/lib:/usr/local/nvidia/lib:/usr/local/nvidia/lib64
 
-//will work on the segmentation first
-//hope it can be solved
+
 
 //using original yolo repo:
 
@@ -66,7 +63,10 @@ yolo export model=yolov8l.pt data=coco128-seg.yaml format=tflite int32
 
 yolo predict model=./yolov8x-seg_int8.tflite source='./download2.png'
 
--------
+
+
+
+
 
 somecode: from ultralytics import YOLO
 
