@@ -104,6 +104,20 @@ model.export(format="tflite", imgsz=[input_height,input_width], optimize=optimiz
 
 //resume training cli example: !yolo task=segment mode=train resume model=./runs/segment/train6/weights/last.pt data=pascal-part-seg.yaml epochs=200 batch=12 
 
+//new a .py file called train.py and this to retrain:
+from ultralytics import YOLO
+
+if __name__ == '__main__':
+  
+  model = YOLO('./last.pt') # I copied last.pt to the principal folder
+  model.resume=True
+
+  results = model.train(
+    data='./pascal-part-seg.yaml',
+    imgsz=640,
+    epochs=500,
+    batch=12)
+
 -------
 
 
