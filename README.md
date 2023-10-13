@@ -66,9 +66,7 @@ yolo predict model=./yolov8x-seg_int8.tflite source='./download2.png'
 
 
 
-
-
-somecode: from ultralytics import YOLO
+Somecode: from ultralytics import YOLO
 
 model_name = 'yolov8l-seg' #@param ["yolov8n-seg", "yolov8s-seg", "yolov8m-seg", "yolov8l-seg", "yolov8x-seg"]
 input_width = 640 #@param {type:"slider", min:32, max:4096, step:32}
