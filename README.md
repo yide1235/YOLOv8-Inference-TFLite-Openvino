@@ -37,9 +37,11 @@ https://github.com/yide1235/Yolov8-tracking-tflite-CPP.git
 Initial result using yolov8l quantized tflite pretrain model for stereo images(the first index is tracking id, the second is confidence, the color of the box is the class, you can notice this is two frame from a sequence):
 
 https://github.com/yide1235/Yolov8-tracking-tensorflow-lite-CPP/assets/66981525/530f5db2-8c15-4bbe-bf1e-fc55c073045e
-
+### Tracking on video and a pair of image
 ![](./assets/1.jpg)
 ![](./assets/2.jpg)
+
+### Human parts segmentation, fine-tune yolov8 to pascal-part
 ![](./assets/3.jpg)
 
 
