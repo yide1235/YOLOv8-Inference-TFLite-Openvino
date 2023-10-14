@@ -120,6 +120,7 @@ if __name__ == '__main__':
 
 -------
 
+###right now training the first 300 epoch, then last 300 epoch
 
 ### References
 - https://github.com/abewley/sort
