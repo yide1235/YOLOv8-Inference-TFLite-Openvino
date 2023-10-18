@@ -123,10 +123,10 @@ const std::vector<vector<float>>& results2, int move_threshold, float ratio_thre
         }
         std::cout << i_ratio/corresp_ratio << std::abs(corresp_x_mid-i_x_mid) << std::abs(corresp_y_mid-i_y_mid) << std::endl;
         // assert(1==0);
-        if((0.75> std::abs(std::abs((i_box[2]-i_box[0])*(i_box[3]-i_box[1]))/std::abs((corresp_box[2]-corresp_box[0])*(corresp_box[3]-corresp_box[1]))))||
-        (1.25< std::abs(std::abs((i_box[2]-i_box[0])*(i_box[3]-i_box[1]))/std::abs((corresp_box[2]-corresp_box[0])*(corresp_box[3]-corresp_box[1]))))){
-          moved=false;
-        }
+        // if((0.75> std::abs(std::abs((i_box[2]-i_box[0])*(i_box[3]-i_box[1]))/std::abs((corresp_box[2]-corresp_box[0])*(corresp_box[3]-corresp_box[1]))))||
+        // (1.25< std::abs(std::abs((i_box[2]-i_box[0])*(i_box[3]-i_box[1]))/std::abs((corresp_box[2]-corresp_box[0])*(corresp_box[3]-corresp_box[1]))))){
+        //   moved=false;
+        // }
         // std::cout << "trackingis is: "<< " " << i << " " << j << std::abs(corresp_x_mid-i_x_mid) << " " << std::abs(corresp_y_mid-i_y_mid) << " " << i_ratio/corresp_ratio << " "<< std::abs(std::abs((i_box[2]-i_box[0])*(i_box[3]-i_box[1]))/std::abs((corresp_box[2]-corresp_box[0])*(corresp_box[3]-corresp_box[1]))) << std::endl;
       }
 
@@ -1083,6 +1083,8 @@ void generateIds(std::vector<std::vector<float>>* results, std::vector<int>*id_l
 
       (*results)[i].push_back(-1.0);
       (*results)[i].push_back(0.0);
+
+      
     }
 
     
@@ -1115,9 +1117,11 @@ void compare(
   // int cut_threshold = 40;
 
 
-  int svd_threshold=40;
-  int cut_threshold=120;
+  // int svd_threshold=40;
+  // int cut_threshold=120;
 
+  int svd_threshold=80;
+  int cut_threshold=180;
 
 
   //now results1 have ids, results2 does not have ids
@@ -1331,7 +1335,7 @@ void compare(
                   if (class_id2 == class_id1){
 
                     cv::Mat ds_detected2;
-                    cv::resize(detected2, ds_detected2, cv::Size(120, 120));
+                    cv::resize(detected2, ds_detected2, cv::Size(200, 200));
 
                     
                     std::vector<cv::Mat> l1l4 = calculateSVD(ds_detected2);
@@ -1341,7 +1345,7 @@ void compare(
 
          
                     cv::Mat ds_detected1;
-                    cv::resize(detected1, ds_detected1, cv::Size(120, 120));
+                    cv::resize(detected1, ds_detected1, cv::Size(200, 200));
                     std::vector<cv::Mat> c1c4 = calculateSVD(ds_detected1);
 
 
@@ -1811,7 +1815,8 @@ int ml_processing_thread()
       "teddy bear", "hair drier", "toothbrush"
   };
   //motion object: 0,1,2,3,5,7
-  std::vector<float> myList={0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0};
+  // std::vector<float> myList={0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0};
+  std::vector<float> myList={0.0};
   // create model
   std::unique_ptr<tflite::FlatBufferModel> model =
       tflite::FlatBufferModel::BuildFromFile("./yolov8l_integer_quant.tflite");
@@ -1826,7 +1831,7 @@ int ml_processing_thread()
   interpreter->AllocateTensors();
 
   while(keep_ml_thread_alive()){
-    cv::VideoCapture cap("./30min1.mp4");
+    cv::VideoCapture cap("./4s.mp4");
     // segment_id = get_next_video();
     // cv::VideoCapture cap(get_video_string(segment_id));
 
@@ -1986,7 +1991,7 @@ int ml_processing_thread()
       );
 
 
-      moved_list=motion_detection_pair(results2, results3, 72, 0.80);
+      moved_list=motion_detection_pair(results2, results3, 40, 0.70);
       for(int i=0;i<moved_list.size();i++){
         auto it = std::find(id_list.begin(), id_list.end(), moved_list[i]);
         if (it != id_list.end()) {
