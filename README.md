@@ -121,6 +121,11 @@ if __name__ == '__main__':
 -------
 
 ###right now training the first 300 epoch, then last 300 epoch
+### testing
+source yolov8python/bin/activate
+yolo predict model=./last.pt source='./tmpr21.png' hide_labels=True boxes=False
+
+
 
 ### References
 - https://github.com/abewley/sort
