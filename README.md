@@ -74,7 +74,7 @@ pip install torchvision --upgrade
 
 !pip install ultralytics)
 
-yolo export model=yolov8l.pt data=coco128-seg.yaml format=tflite int32
+yolo export model=yolov8l-seg.pt data=coco128-seg.yaml format=tflite int8
 
 yolo predict model=./yolov8x-seg_int8.tflite source='./download2.png'
 
