@@ -125,6 +125,11 @@ if __name__ == '__main__':
 source yolov8python/bin/activate
 yolo predict model=./last.pt source='./tmpr21.png' hide_labels=True boxes=False
 
+-------
+
+### Runing:
+first run background removal then humanpart segmentation
+or should run in one inference
 
 
 ### References
