@@ -74,7 +74,7 @@ pip install torchvision --upgrade
 
 !pip install ultralytics)
 
-yolo export model=yolov8l.pt data=coco128-seg.yaml format=tflite int32
+yolo export model=yolov8l-seg.pt data=coco128-seg.yaml format=tflite int8
 
 yolo predict model=./yolov8x-seg_int8.tflite source='./download2.png'
 
@@ -125,6 +125,11 @@ if __name__ == '__main__':
 source yolov8python/bin/activate
 yolo predict model=./last.pt source='./tmpr21.png' hide_labels=True boxes=False
 
+-------
+
+### Runing:
+first run background removal then humanpart segmentation
+or should run in one inference
 
 
 ### References
