@@ -73,6 +73,20 @@ def humanpart():
 
         boxes, scores, class_ids, masks = yoloseg(frame)
 
+        # print('---------------')
+        # print(boxes)
+        # print(boxes.shape)
+        # print('---------------')
+        # print(scores)
+        # print('---------------')
+        # print(class_ids)
+        # print('---------------')
+        # print(masks)
+        # print(type(masks))
+        # print(masks.shape)
+        # print('---------------')
+
+
         # postprocess and draw masks
         combined_img = yoloseg.draw_output(frame)
 

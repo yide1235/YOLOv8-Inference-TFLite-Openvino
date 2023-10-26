@@ -133,7 +133,7 @@ def draw_detections(image, boxes, scores, class_ids, mask_alpha=0.3, mask_maps=N
     size = min([img_height, img_width]) * 0.0010
     text_thickness = int(min([img_height, img_width]) * 0.002)
 
-    mask_img = draw_masks(image, boxes, class_ids, mask_alpha, mask_maps, bg_removal=False)
+    mask_img = draw_masks(image, boxes, class_ids, mask_alpha, mask_maps, bg_removal=True)
 
     # Draw bounding boxes and labels of detections
     for box, score, class_id in zip(boxes, scores, class_ids):
@@ -170,51 +170,6 @@ def draw_detections(image, boxes, scores, class_ids, mask_alpha=0.3, mask_maps=N
 
 
 
-#this is normal printing
-def draw_masks(image, boxes, class_ids, mask_alpha=0.3, mask_maps=None, bg_removal=None):
-    
-    if bg_removal:
-        # Create a full white image with the same size as the input image
-        mask_img = np.ones_like(image) * 255
-
-        # Draw bounding boxes and labels of detections
-        for i, (box, class_id) in enumerate(zip(boxes, class_ids)):
-            # color = colors[class_id]
-            color = colors(class_id, True)
-
-            x1, y1, x2, y2 = box.astype(int)
-
-            if mask_maps is None:
-                mask_img[y1:y2, x1:x2] = image[y1:y2, x1:x2]
-            else:
-                crop_mask = mask_maps[i][y1:y2, x1:x2, np.newaxis]
-                mask_img[y1:y2, x1:x2] = image[y1:y2, x1:x2] * crop_mask + mask_img[y1:y2, x1:x2] * (1 - crop_mask)
-
-        return mask_img
-    
-    else:
-        mask_img = image.copy()
-
-        # Draw bounding boxes and labels of detections
-        for i, (box, class_id) in enumerate(zip(boxes, class_ids)):
-
-            # color = colors[class_id]
-            color=colors(class_id, True)
-
-            x1, y1, x2, y2 = box.astype(int)
-
-
-            if mask_maps is None:
-                cv2.rectangle(mask_img, (x1, y1), (x2, y2), color, -1)
-            else:
-                crop_mask = mask_maps[i][y1:y2, x1:x2, np.newaxis]
-                crop_mask_img = mask_img[y1:y2, x1:x2]
-                crop_mask_img = crop_mask_img * (1 - crop_mask) + crop_mask * color
-                mask_img[y1:y2, x1:x2] = crop_mask_img
-
-        return cv2.addWeighted(mask_img, mask_alpha, image, 1 - mask_alpha, 0)
-
-
 
 def draw_comparison(img1, img2, name1, name2, fontsize=2.6, text_thickness=3):
     (tw, th), _ = cv2.getTextSize(text=name1, fontFace=cv2.FONT_HERSHEY_DUPLEX,
@@ -247,6 +202,194 @@ def draw_comparison(img1, img2, name1, name2, fontsize=2.6, text_thickness=3):
         combined_img = cv2.resize(combined_img, (3840, 2160))
 
     return combined_img
+
+
+
+
+
+
+#this is normal printing
+def draw_masks(image, boxes, class_ids, mask_alpha=0.3, mask_maps=None, bg_removal=None):
+    
+    if bg_removal:
+        #bg_removal goes here
+        # Create a full white image with the same size as the input image
+        mask_img = np.ones_like(image) * 255
+
+        # Draw bounding boxes and labels of detections
+        for i, (box, class_id) in enumerate(zip(boxes, class_ids)):
+            # color = colors[class_id]
+            color = colors(class_id, True)
+
+            x1, y1, x2, y2 = box.astype(int)
+
+            if mask_maps is None:
+                mask_img[y1:y2, x1:x2] = image[y1:y2, x1:x2]
+            else:
+                crop_mask = mask_maps[i][y1:y2, x1:x2, np.newaxis]
+                mask_img[y1:y2, x1:x2] = image[y1:y2, x1:x2] * crop_mask + mask_img[y1:y2, x1:x2] * (1 - crop_mask)
+                # print(mask_img[y1:y2, x1:x2].shape)
+                if mask_img[y1:y2, x1:x2].size != 0 and mask_img[y1:y2, x1:x2].shape[0] != 0 and mask_img[y1:y2, x1:x2].shape[1] != 0:
+                    # cv2.imshow('a.png',mask_img[y1:y2, x1:x2])
+                    # key = cv2.waitKey(0)  # Wait indefinitely for a key press
+                    mask_img[y1:y2, x1:x2] = draw_pca_on_segment(mask_img[y1:y2, x1:x2], center_method='geometric')
+
+        return mask_img
+    
+    else:
+        #humanpart goes here, dont use here, this is just for visualization
+
+        mask_img = image.copy()
+
+        # Draw bounding boxes and labels of detections
+
+        for i, (box, class_id) in enumerate(zip(boxes, class_ids)):
+
+            # color = colors[class_id]
+            color=colors(class_id, True)
+
+            x1, y1, x2, y2 = box.astype(int)
+
+
+            if mask_maps is None:
+                cv2.rectangle(mask_img, (x1, y1), (x2, y2), color, -1)
+            else:
+                crop_mask = mask_maps[i][y1:y2, x1:x2, np.newaxis]
+
+                crop_mask_img = mask_img[y1:y2, x1:x2]
+                
+
+
+                crop_mask_img = crop_mask_img * (1 - crop_mask) + crop_mask * color
+
+                mask_img[y1:y2, x1:x2] = crop_mask_img
+
+
+
+                # if crop_mask_img.size != 0 and crop_mask_img.shape[0] != 0 and crop_mask_img.shape[1] != 0:
+                #     # visualize_data_points(mask_img[y1:y2, x1:x2])
+                #     cv2.imshow('a.png',mask_img[y1:y2, x1:x2])
+                
+                #     key = cv2.waitKey(0)  # Wait indefinitely for a key press
+
+                #     mask_img[y1:y2, x1:x2] = draw_pca_on_segment(mask_img[y1:y2, x1:x2], center_method='geometric')
+
+
+
+        return cv2.addWeighted(mask_img, mask_alpha, image, 1 - mask_alpha, 0)
+
+
+
+
+
+def find_boundary_point(center, direction, mask, scale_increment=0.4):
+    scale = scale_increment
+    x, y = center
+    while True:
+        new_x, new_y = (center + scale * direction).astype(int)
+        # If point is out of image bounds or reaches a boundary (mask is 0), stop
+        if (new_x < 0 or new_y < 0 or new_x >= mask.shape[1] or new_y >= mask.shape[0]) or mask[new_y, new_x] == 0:
+            return (x, y)
+        x, y = new_x, new_y
+        scale += scale_increment
+
+
+
+def draw_pca_on_segment(segment_img, threshold=200, center_method='mean', sample_size=0.3):
+    # Convert to grayscale for simplicity
+
+    # print(segment_img.dtype)
+    # segment_img = (segment_img * 255).astype(np.uint8)
+    # segment_img = segment_img.astype(np.uint8)
+
+
+
+    gray = cv2.cvtColor(segment_img, cv2.COLOR_BGR2GRAY)
+
+    # Create a binary mask
+    _, mask = cv2.threshold(gray, threshold, 255, cv2.THRESH_BINARY_INV)
+
+    # Randomly sample the points from the mask
+    y, x = np.where(mask == 255)
+    mask_points = np.column_stack((x, y))
+    num_samples = int(sample_size * len(mask_points))
+    indices = np.random.choice(len(mask_points), num_samples, replace=False)
+    sampled_points = mask_points[indices]
+
+    data_points = np.float32(sampled_points)
+    mean, eigenvectors, _ = cv2.PCACompute2(data_points, mean=None)
+    center = tuple(mean[0].astype(int))
+
+    # Find boundary intersection points using the mask
+    endpoint1 = find_boundary_point(np.array(center), eigenvectors[0], mask)
+    startpoint1 = find_boundary_point(np.array(center), -eigenvectors[0], mask)
+    
+    endpoint2 = find_boundary_point(np.array(center), eigenvectors[1], mask)
+    startpoint2 = find_boundary_point(np.array(center), -eigenvectors[1], mask)
+
+    # Draw the PCA results on the original segment image
+    cv2.line(segment_img, startpoint1, endpoint1, (0, 0, 255), 2)
+    cv2.line(segment_img, startpoint2, endpoint2, (0, 255, 0), 2)
+    cv2.circle(segment_img, center, 3, (255, 0, 0), -1)
+
+    # # Draw startpoint1 and endpoint1 as red points
+    # cv2.circle(segment_img, startpoint1, 3, (0, 0, 255), -1)  
+    # cv2.circle(segment_img, endpoint1, 3, (0, 0, 255), -1)  
+
+    # # Draw startpoint2 and endpoint2 as green points
+    # cv2.circle(segment_img, startpoint2, 3, (0, 255, 0), -1)  
+    # cv2.circle(segment_img, endpoint2, 3, (0, 255, 0), -1)  
+
+
+    return segment_img
+
+
+
+
+
+
+
+# def draw_pca_on_segment(segment_img, threshold=240, center_method='mean'):
+
+#     # Convert to grayscale for simplicity
+#     gray = cv2.cvtColor(segment_img, cv2.COLOR_BGR2GRAY)
+
+#     # Find non-white points
+#     y, x = np.where(gray < threshold)
+#     data_points = np.float32(np.column_stack((x, y)))
+
+
+#     mean, eigenvectors, eigenvalues = cv2.PCACompute2(data_points, mean=None)
+    
+
+#     center = tuple(mean[0].astype(int))
+    
+#     # Geometric Center
+#     if center_method == 'geometric':
+#         x_min, x_max = np.min(x), np.max(x)
+#         y_min, y_max = np.min(y), np.max(y)
+#         center = ((x_min + x_max) // 2, (y_min + y_max) // 2)
+    
+#     # Centroid of the Mask
+#     elif center_method == 'centroid':
+#         center = (np.mean(x).astype(int), np.mean(y).astype(int))
+    
+
+#     startpoint1 = tuple((center - 0.5 * eigenvectors[0] * eigenvalues[0]).astype(int)) 
+#     endpoint1 = tuple((center + 0.5 * eigenvectors[0] * eigenvalues[0]).astype(int))
+    
+#     startpoint2 = tuple((center - 0.5 * eigenvectors[1] * eigenvalues[1]).astype(int))
+#     endpoint2 = tuple((center + 0.5 * eigenvectors[1] * eigenvalues[1]).astype(int))
+
+#     # Draw the PCA results on the original segment image
+#     cv2.line(segment_img, startpoint1, endpoint1, (0, 0, 255), 2)
+#     cv2.line(segment_img, startpoint2, endpoint2, (0, 255, 0), 2)
+#     cv2.circle(segment_img, center, 3, (255, 0, 0), -1)
+
+#     return segment_img
+
+
+
 
 
 
@@ -335,7 +478,7 @@ class YOLOSeg_humanpart:
     def expand_bounding_boxes(self, boxes):
 
         expanded_boxes = []
-        add=0.15
+        add=0.2
         for box in boxes:
             x1, y1, x2, y2 = box
             width = x2 - x1

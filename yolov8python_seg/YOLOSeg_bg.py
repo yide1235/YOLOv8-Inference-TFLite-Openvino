@@ -157,6 +157,7 @@ def draw_detections(image, boxes, scores, class_ids, mask_alpha=0.3, mask_maps=N
 def draw_masks(image, boxes, class_ids, mask_alpha=0.3, mask_maps=None, bg_removal=None):
     
     if bg_removal:
+        #bg_removal goes here
         # Create a full white image with the same size as the input image
         mask_img = np.ones_like(image) * 255
 
@@ -176,6 +177,7 @@ def draw_masks(image, boxes, class_ids, mask_alpha=0.3, mask_maps=None, bg_remov
         return mask_img
     
     else:
+        #humanpart goes here
         mask_img = image.copy()
 
         # Draw bounding boxes and labels of detections
