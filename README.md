@@ -44,6 +44,8 @@ Tracking on video and a pair of image
 Human parts segmentation, fine-tune yolov8 to pascal-part
 ![](./assets/3.jpg)
 
+![](./assets/4.jpg)
+
 -------
 
 ### C++run command figure out:
