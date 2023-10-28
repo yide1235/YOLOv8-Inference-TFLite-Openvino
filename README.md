@@ -69,6 +69,7 @@ export LD_LIBRARY_PATH=/content/conda-env/lib:/usr/local/nvidia/lib:/usr/local/n
 //using original yolo repo for inference:
 
 (some env mayhelp: pip install torch==2.0.1
+pip install tensorflow==2.13.1 #2.14 will give error
 
 pip install torchaudio==2.0.2+cu118 torchdata==0.6.1 torchtext==0.15.2
 
