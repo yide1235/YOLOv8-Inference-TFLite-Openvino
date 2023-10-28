@@ -94,7 +94,8 @@ std::vector<vector<float>>* results2, float move_threshold, float ratio_threshol
 
       
 
-      if((results1[i][7]==(*results2)[j][7])&&(results1[i][8]!=-1)&&((*results2)[j][8]!=-1)){
+      // if((results1[i][7]==(*results2)[j][7])&&(results1[i][8]!=-1)&&((*results2)[j][8]!=-1)&&(results1[i][6]==0)&&((*results2)[j][6]==0)){ //they must both seen
+      if((results1[i][7]==(*results2)[j][7])&&(results1[i][8]!=-1)&&((*results2)[j][8]!=-1)){ 
         std::vector<float> i_box;//results1
         std::vector<float> corresp_box;//results2
 
@@ -158,11 +159,11 @@ auto mat_process(cv::Mat src, uint width, uint height) -> cv::Mat
 {
   // convert to float; BGR -> RGB
   cv::Mat dst2;
-  std::cout << "Creating dst" << endl;
+
   // src.convertTo(dst, CV_32FC3);
-  std::cout << "Creating dst2" << endl;
+
   cv::cvtColor(src, dst2, cv::COLOR_BGR2RGB);
-  std::cout << "Creating dst3" << endl;
+
 
 
   cv::Mat normalizedImage(dst2.rows, dst2.cols, CV_32FC3);
@@ -425,7 +426,7 @@ std::vector<std::vector<float>> process_4(const std::unique_ptr<tflite::Interpre
 
 
 
-  std::cout << " Got model " << endl;
+
   // get input & output layer
   TfLiteTensor *input_tensor = interpreter->tensor(interpreter->inputs()[0]);
   // cout << " Got input " << endl;
@@ -456,7 +457,7 @@ std::vector<std::vector<float>> process_4(const std::unique_ptr<tflite::Interpre
   // interpreter->SetAllowFp16PrecisionForFp32(true);
 
   start = std::chrono::system_clock::now();
-  std::cout << " GOT INPUT IMAGE " << endl;
+
   
   // flatten rgb image to input layer.
   // float* input_data = interpreter->typed_input_tensor<float>(0);
@@ -499,7 +500,7 @@ std::vector<std::vector<float>> process_4(const std::unique_ptr<tflite::Interpre
 
 
     while (n < 80) {
-      if (box_vec[n * 8400 + m + base] >= 0.45) {
+      if (box_vec[n * 8400 + m + base] >= 0.51) {
         index.push_back(n);
         confidence.push_back(box_vec[n * 8400 + m + base]);
 
@@ -1141,8 +1142,10 @@ void compare(
   // int cut_threshold = 40;
 
 
-  // int svd_threshold=40;
-  // int cut_threshold=120;
+  // int svd_threshold=30;
+  // int cut_threshold=100;
+  // int svd_threshold=20;
+  // int cut_threshold=80;
 
   int svd_threshold=80;
   int cut_threshold=180;
@@ -1398,7 +1401,7 @@ void compare(
 
 
                     float ms = get_score(l1,l2,l3,l4,c1,c2,c3,c4);
-                    std::cout << ms << std::endl;
+           
                     if (ms < min_score) {
                         min_score = ms;
                         index = j;
@@ -1533,8 +1536,10 @@ void compare(
 
   
 }
+  
 
 
+  
 
 void update_lastseen(std::vector<std::vector<float>>* results){
 
@@ -1543,6 +1548,7 @@ void update_lastseen(std::vector<std::vector<float>>* results){
       if((*results)[i][8]==-1){
         (*results)[i][6]++;
       }
+
     }
   }
 
@@ -1593,7 +1599,7 @@ void plotBboxes(const cv::Mat& img, const std::vector<std::vector<float>>& resul
     // cv::Mat im0 = cv::imread(imgPath);
     cv::Mat im0=img;
     for (int i = 0; i < results.size(); ++i) {
-      if(results[i][6]==0){  //so we print it out whatever if found it or not as long as last seen is 0 
+      if(results[i][6]==0.0f){  //so we print it out whatever if found it or not as long as last seen is 0 
  
         const std::vector<float>& value = results[i];
         std::vector<float> bbox(value.begin(), value.begin() + 4);
@@ -1624,12 +1630,10 @@ void plotBboxes(const cv::Mat& img, const std::vector<std::vector<float>>& resul
             label = clsName + "" + std::to_string(trackingid) + " " + formattedValue;
         }
         
-        
-
         cv::Scalar color = getColor(clsId, true);
         
-
         im0 = plotOneBox(bbox, im0, color, label);}
+
     }
     if (!im0.empty()) {
       try {
@@ -1690,6 +1694,7 @@ string get_meta_data(cv::Mat mat1, std::vector<std::vector<float>> results){
   }
 
 
+  string oids = "";
   string objects = "";
   string bndbox = ""; 
   string bndzones = "";
@@ -1722,8 +1727,10 @@ string get_meta_data(cv::Mat mat1, std::vector<std::vector<float>> results){
     
 
       int curr_class = results[pick_index][5];
+      int oid = results[pick_index][7];
       cv::rectangle(mat1, rect, cv::Scalar(0, 255, 0), 3);
       cv::putText(mat1, to_string(curr_class), cv::Point(rect.x+0.5 * rect.width, rect.y+0.5*rect.height), cv::FONT_HERSHEY_DUPLEX, 1.0, CV_RGB(118,185,0),2);
+      oids += to_string(oid) + ",";
       objects += to_string(curr_class) + ","; //to_string(ids[pick[pick_index]]) + ",";
       bndbox += "[" + to_string(rect.x) + "," + to_string(rect.y) + "," + to_string(rect.x+rect.width) + "," + to_string(rect.y + rect.height) + "],"; 
 
@@ -1769,6 +1776,7 @@ string get_meta_data(cv::Mat mat1, std::vector<std::vector<float>> results){
   bndbox =  "<rt7:BndBox>[" + bndbox.substr(0,bndbox.length()-1) + "]</rt7:BndBox>";
   bndzones = "<rt7:ObjectZone>[" + bndzones.substr(0,bndzones.length()-1) + "]</rt7:ObjectZone>";
   zoneclassstr = "<rt7:ZoneClasses>[" + zoneclassstr.substr(0,zoneclassstr.length()-1)  + "]</rt7:ZoneClasses>";
+  oids = "<rt7:Oid>[" + oids.substr(0,oids.length()-1) + "]</rt7:Oid>";
   
   //add the image reference and the zone classes
   //add zone intersections here
@@ -1786,7 +1794,7 @@ string get_meta_data(cv::Mat mat1, std::vector<std::vector<float>> results){
     develop motion metadata
   */
 
-  return objects + bndbox + bndzones + zoneclassstr;
+  return objects + bndbox + bndzones + zoneclassstr + oids;
 
 
 }
@@ -1814,7 +1822,7 @@ std::vector<std::vector<float>> results2motion(std::vector<std::vector<float>>* 
     int temp=static_cast<int>((*results)[i][7]);
 
     auto it = std::find((*id_list).begin(), (*id_list).end(), temp);
-    if (it != (*id_list).end()&&(*results)[i][8]!=-1.0) {//this means if the objects is a moving object and it is in current seen
+    if (it != (*id_list).end()&&(*results)[i][6]==0.0) {//this means if the objects is a moving object and it is in current seen
       motion_results.push_back((*results)[i]);
     } 
   }  
@@ -1827,7 +1835,7 @@ std::vector<std::vector<float>> results2motion(std::vector<std::vector<float>>* 
 
 
 void remove_unfind(std::vector<std::vector<float>>* results) {
-    float remove_threshold = 10.0;
+    float remove_threshold = 3.0;
 
     // Use remove_if along with erase to remove elements based on the condition
     (*results).erase(std::remove_if((*results).begin(), (*results).end(), [=](const std::vector<float>& innerVec) {
@@ -1837,9 +1845,25 @@ void remove_unfind(std::vector<std::vector<float>>* results) {
 }
 
 
+//initial the motion info
+void initial_motion(std::vector<std::vector<float>>* results){
+  if ((*results).size()>0){
+    for(int i=0;i<(*results).size();i++){
+      // std::cout << (*results).size() <<std::endl;
+      if((*results)[i].size()==10){
+        (*results)[i].push_back(0.0f);
+        (*results)[i].push_back(0.0f);
+        (*results)[i].push_back(0.0f);
+      }
+    }
+  }
+}
 
-
-
+cv::Mat bgrx_to_mat(unsigned char* img, int width, int height){
+    cv::Mat bg(height,width,CV_8UC4);
+    memcpy(bg.data,img, width*height*4);
+    return bg;
+}
 
 
 int ml_processing_thread()
@@ -1871,380 +1895,178 @@ int ml_processing_thread()
   std::vector<float> myList={0.0};
   // create model
   std::unique_ptr<tflite::FlatBufferModel> model =
-      tflite::FlatBufferModel::BuildFromFile("./yolov8l_integer_quant.tflite");
+      tflite::FlatBufferModel::BuildFromFile("./yolov8n_integer_quant.tflite");
   
-  auto ext_delegate_option = TfLiteExternalDelegateOptionsDefault("/usr/lib/libvx_delegate.so");
-  auto ext_delegate_ptr = TfLiteExternalDelegateCreate(&ext_delegate_option);
+  // auto ext_delegate_option = TfLiteExternalDelegateOptionsDefault("/usr/lib/libvx_delegate.so");
+  // auto ext_delegate_ptr = TfLiteExternalDelegateCreate(&ext_delegate_option);
   tflite::ops::builtin::BuiltinOpResolver resolver;
   std::unique_ptr<tflite::Interpreter> interpreter;
   tflite::InterpreterBuilder(*model, resolver)(&interpreter);
-  interpreter->ModifyGraphWithDelegate(ext_delegate_ptr);
+  // interpreter->ModifyGraphWithDelegate(ext_delegate_ptr);
   interpreter->SetAllowFp16PrecisionForFp32(false);
   interpreter->AllocateTensors();
 
+  bool initial=true;
+  std::vector<std::vector<float>> results1;
+  std::vector<std::vector<float>> output_id1;
+  std::vector<std::vector<float>> results2;
+  std::vector<std::vector<float>> output_id2;
+
+  std::vector<int> id_list; //object_ids 
+  std::vector<int> moved_list;
+  std::vector<std::vector<float>> motion_results;
+  int count=0;
+  cv::Mat newframe;
+  cv::Mat prev_frame;
+  float addition=1; //increment for the new id
+  float move_threshold=50.0;
+  float size_threshold=50000.0;
+
+  
   while(keep_ml_thread_alive()){
-    cv::VideoCapture cap("./30min8.mp4");
+
+    cv::VideoCapture cap("./30min_videos/30min8.mp4");
+    // cv::VideoCapture cap("./test_videos/325.mp4");
+
+    int fps = static_cast<int>(cap.get(cv::CAP_PROP_FPS));
     // segment_id = get_next_video();
     // cv::VideoCapture cap(get_video_string(segment_id));
-
     if (!cap.isOpened()) {
         std::cerr << "Error: Couldn't open input video!" << std::endl;
         continue;
     }
-    // int frame_width = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_WIDTH));
-    // int frame_height = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_HEIGHT));
-    int fps = static_cast<int>(cap.get(cv::CAP_PROP_FPS)); //video frame rate
-    float addition=1; //increment for the new id
-    //float drop_threshold=20; //
-    std::chrono::time_point<std::chrono::system_clock> beg, start, end, done, nmsdone;
-    std::chrono::duration<double> elapsed_seconds;
-    std::vector<std::vector<float>> results1;
-    //results1 and results2 are vector of vectors of the following type
-  //                 0,1,2,3,  4,           5,       6,         7,     8,          9,                    10,              11               ,12
-  //result is become 4bbox, 1confidence, 1classid, 1lastseen, 1id, 1iffindforco, 1updatedco/svd score, delta_ratio,     delta_center_x,   delta_center_y
-
-    //output_id is the same as results1 4bbox, conf, classid without the rest 
-    std::vector<std::vector<float>> output_id1;
-    std::vector<std::vector<float>> results2;
-    std::vector<std::vector<float>> output_id2;
-    std::vector<int> id_list; //object_ids 
-    std::vector<int> moved_list;
-    cv::Mat last_frame;
-    cv::Mat end_frame;
-    std::vector<std::vector<float>> motion_results2;
-    std::vector<std::vector<float>> motion_results;
-
-
-    int count=0;
-    cv::Mat frame1;
-    cv::Mat frame2;
-
-    int frame_seq = 0; //check this reference --> what is the frame seq of results1 ???
-
-    cap >> frame1; //check this reference --> Yide: seems to be inefficient, get the first and last frame
-
-    double start_frame_ts = cap.get(cv::CAP_PROP_POS_MSEC); 
-    
-    //check this reference ---> how to get the best 2 frames ?? Additional function ??
-
-
-    for(int i=0;i<fps;i++){
-      cap>>frame2;
-
-      count++;
-
-    }
-
-    if(frame2.empty()){
-      break;
-    }
-
-    results1 = process_4(interpreter,frame1);
-    output_id1=output_id(frame1, results1);
-    generateIds(&results1, &id_list, &myList);
-    update_lastseen(&results1);
-    results2 = process_4(interpreter,frame2);
-    output_id2=output_id(frame2, results2);
-    start = std::chrono::system_clock::now();
-    compare(
-      frame1, &results1,output_id1,
-      frame2, &results2,output_id2, &addition, &id_list, myList
-    );
-  
-
-    for(int i=0;i<results2.size();i++){
-      std::cout << results2[i].size() <<std::endl;
-      if(results2[i].size()==10){
-        results2[i].push_back(0.0f);
-        results2[i].push_back(0.0f);
-        results2[i].push_back(0.0f);
-      }
-    }
-
-
-
-    moved_list=motion_detection_pair(results1, &results2, 40.0, 50000.0);
-    for(int i=0;i<moved_list.size();i++){
-      auto it = std::find(id_list.begin(), id_list.end(), moved_list[i]);
-      if (it != id_list.end()) {
-          // Element found
-          //do nothing
-      } else {
-          // Element not found
-          id_list.push_back(moved_list[i]);
-      }
-    }
-
-    end = std::chrono::system_clock::now();
-    elapsed_seconds = end - start;
-    printf("The time for compare was s: %.10f\n", elapsed_seconds.count());
-
-    output_id2=output_id(frame2, results2);
-    std::string outputFileName = "./out/output" + std::to_string(count) + ".jpg";
-    plotBboxes(frame2, results2, coco_names, outputFileName,id_list);
-    update_lastseen(&results2);
-    
-
-
-
-    string output = "";
-    last_frame=frame2;
-
-
-    string meta_result1 = "";
-    bool is_motion1 = false;
-    
-    
-
-    if(id_list.size()>0){
-    
-      motion_results2=results2motion(&results2,&id_list);
-
-      meta_result1 = get_meta_data(frame2, motion_results2); 
-      std::cout << meta_result1 << std::endl;
-
-      is_motion1 = true;
-    }
-
-
-
-    id_list.clear();
-
-
-    std::cout << "------" << std::endl;
-
-    for (const auto& innerVec : results1) {
-        for (float value : innerVec) {
-            std::cout << value << " ";
+    std::deque<cv::Mat> std_ml_image_proc_deque;
+    while (true) {
+        cv::Mat frame;
+        if (!cap.read(frame)) {
+            break;
         }
-        std::cout << std::endl;
+        std_ml_image_proc_deque.push_back(frame);
     }
+    std::cout << "mp4 to dq list conversion is done" << std_ml_image_proc_deque.size() << std::endl;
 
-    std::cout << "---" << std::endl;
+    while(std_ml_image_proc_deque.size()>0){
 
-    for (const auto& innerVec : results2) {
-        for (float value : innerVec) {
-            std::cout << value << " ";
-        }
-        std::cout << std::endl;
-    }
-
-    std::cout << "------" << std::endl;
-
-
-
-    while(true){ //check this reference --> this should only be two comparisons ??
-
-
-      cap >> frame1;
-      if (frame1.empty()) {
-        break; 
-      }
-
-      double frame_ts = cap.get(cv::CAP_PROP_POS_MSEC);
-      std::time_t frametime = static_cast<std::time_t>(frame_ts / 1000.0);
-      std::tm localtm;
-      localtime_r(&frametime, &localtm);
-
-      // for(int i=0;i<fps;i++){
-      //   if(i==fps/2){cap>>frame2;}
-      //   cap>>end_frame;
-      //   if(end_frame.empty()){
-      //     break;
-      //   }
-      //   count++;
-
-      // }
-
-
-      for(int i=0;i<fps;i++){
-        cap>>frame2;
-
+      for(int i=0;i<fps/2;i++){
+        newframe = std_ml_image_proc_deque.front();
         count++;
-
+        std_ml_image_proc_deque.pop_front();
       }
 
-      if(frame2.empty()){
-        break;
-      }
+      
+      // cv::Mat frame = bgrx_to_mat(newframe.data, newframe.cols, newframe.rows);
+      cv::Mat frame=newframe;
+      // std::cout << frame.rows << frame.cols << std::endl;
 
-      //last_frame, reuslts2, output_ids2
-      //do check with results2(previous frame) and results3
-      std::vector<std::vector<float>> results3 = process_4(interpreter,frame1);
-      std::vector<std::vector<float>> output_id3=output_id(frame1, results3);
+      if(initial){
 
+        //do thing for the firsttime
+        //dont bother prev_frame
+        results1 = process_4(interpreter,frame);
+        output_id1=output_id(frame, results1);
+        generateIds(&results1, &id_list, &myList);
 
+        //DELETE
+        // update_lastseen(&results1);
+        //DELETE
 
-
-
-
-
-
-      compare(
-        last_frame, &results2,output_id2,
-        frame1, &results3,output_id3, &addition,&id_list, myList
-      );
-
-
-
-      for(int i=0;i<results3.size();i++){
-        std::cout << results3[i].size() <<std::endl;
-        if(results3[i].size()==10){
-          results3[i].push_back(0.0f);
-          results3[i].push_back(0.0f);
-          results3[i].push_back(0.0f);
-        }
-      }
-
-
-
-
-
-
-      moved_list=motion_detection_pair(results2, &results3, 40.0, 50000.0);
-      for(int i=0;i<moved_list.size();i++){
-        auto it = std::find(id_list.begin(), id_list.end(), moved_list[i]);
-        if (it != id_list.end()) {
-            // Element found
-            //do nothing
-        } else {
-            // Element not found
-            id_list.push_back(moved_list[i]);
-        }
-      }
-
-
-      for (const auto& innerVec : results2) {
-          for (float value : innerVec) {
-              std::cout << value << " ";
-          }
-          std::cout << std::endl;
-      }
-
-      std::cout << "---" << std::endl;
-
-      for (const auto& innerVec : results3) {
-          for (float value : innerVec) {
-              std::cout << value << " ";
-          }
-          std::cout << std::endl;
-      }
-
-
-      std::cout << "------" << std::endl;
-
-
-
-
-
-      output_id3=output_id(frame1, results3);
-      update_lastseen(&results3);
-      //now compare results3(frame1) and resutls4(frame2), then pass the results to resutls2
-      std::vector<std::vector<float>> results4 = process_4(interpreter,frame2);
-
-
-      std::vector<std::vector<float>> output_id4=output_id(frame2, results4);
-      start = std::chrono::system_clock::now();
-      compare(
-        frame1, &results3,output_id3,
-        frame2, &results4,output_id4, &addition,&id_list, myList
-      );
-
-
-      for(int i=0;i<results4.size();i++){
-        std::cout << results4[i].size() <<std::endl;
-        if(results4[i].size()==10){
-          results4[i].push_back(0.0f);
-          results4[i].push_back(0.0f);
-          results4[i].push_back(0.0f);
-        }
-      }
-
-
-
-      // moved_list=motion_detection_pair(results3, results4, 72, 0.80);
-      moved_list=motion_detection_pair(results3, &results4, 40.0, 50000.0);
-      for(int i=0;i<moved_list.size();i++){
-        auto it = std::find(id_list.begin(), id_list.end(), moved_list[i]);
-        if (it != id_list.end()) {
-            // Element found
-            //do nothing
-        } else {
-            // Element not found
-            id_list.push_back(moved_list[i]);
-        }
-      }
-
-
-
-
-      end = std::chrono::system_clock::now();
-      elapsed_seconds = end - start;
-      printf("The time for compare was s: %.10f\n", elapsed_seconds.count());
-
-
-
-  
-
-
-
-      output_id4=output_id(frame2, results4);
-      std::string outputFileName = "./out/output" + std::to_string(count) + ".jpg";
-
-
-
-      plotBboxes(frame2, results4, coco_names, outputFileName,id_list);
-      update_lastseen(&results4);
-
-      last_frame=frame2;
-      results2=results4;
-      output_id2=output_id4;
-
-
-
-      //process metadata here
-      string meta_result = "";
-      bool is_motion = false;
-      if(id_list.size()>0){
-        std::cout << "get here 0 " <<std:: endl;
-        motion_results=results2motion(&results4,&id_list);
-        meta_result = get_meta_data(last_frame, motion_results); 
-        std::cout << meta_result << std::endl;
-
-        is_motion = true;
-      }
-
-
-
-      if(is_motion){
         
-          //   //#ifdef VIPER_DEBUG_ENABLED
-          //   //  std::cout << " FOUND MOTION PUSHING SEQ INTO MOTION QUEUE OF SIZE " << to_string(std_ml_image_event_deque.size()) << endl;
-          //   //#endif
-          //   //std::tm localtm = latest_frame->localtime;
-          //   string localtm_str = datetm_to_str(localtm);
-          //   //lock_guard<mutex> image_guard(std_ml_image_event_mutex); //update this reference uncomment it
-            
-          //   //meta_index is frameseq --> 
-          //   //viper_sequence vip_seq = viper_sequence(segment_id,to_string(frameseq),frameseq, localtm_str); //update this reference uncomment it
-          //   //if((std_ml_image_event_deque.size() > 0 && std_ml_image_event_deque.back().seq != segment_id) || (std_ml_image_event_deque.size() == 0)){ //don't push the event if it already is there for the current segment
-          //   //std_ml_image_event_deque.push_back(vip_seq); //update this reference uncomment it
-          //   //std_ml_image_event_index_map[segment_id] = std_ml_image_event_deque.size() - 1 + std_ml_image_event_deque_offset; //update this reference uncomment it
-          //  // }
-
-          //   string image_name = /*std_videos_save_dir +*/ to_string(segment_id) + "-" + to_string(frame_seq) + std_video_image_extension;
-          //   string image_ref = "<rt7:Jpeg>" + image_name + "</rt7:Jpeg>";
-          //   cv::imwrite(std_videos_save_dir +image_name, frame1, {cv::IMWRITE_JPEG_QUALITY,std_videos_jpeg_quality});
-          //   output += "<rt7:Frame>"
-          //   "<rt7:FrameSeq>" + to_string(frame_seq) + "</rt7:FrameSeq>" +
-          //   "<rt7:FrameTime>" + to_string(int( (frame_ts - start_frame_ts) *1000000))+"</rt7:FrameTime>"
-          //   + meta_result + image_ref + 
-          //   "</rt7:Frame>";
+        
+        //ADD
+        string output="";
+        string meta_result1 = "";
+        bool is_motion = false;
+    
+        if(id_list.size()>0){
+          motion_results=results2motion(&results1,&id_list);
+          meta_result1 = get_meta_data(frame, motion_results); 
+          std::cout << meta_result1 << std::endl;
+          is_motion = true;
         }
+        update_lastseen(&results1);
+        //ADD
 
+        prev_frame=frame;
+        initial=false;//after initial the first frame then set this to false
+
+        for (const auto& innerVec : results1) {
+            for (float value : innerVec) {
+                std::cout << value << " ";
+            }
+            std::cout << std::endl;
+        }
+        std::cout << "------" << std::endl;
+
+        //ADD
+        id_list.clear();
+        motion_results.clear();
+        //ADD
+      }
+      // //                 0,1,2,3,  4,           5,       6,         7,     8,          9,                    10,              11               ,12
+      // //result is become 4bbox, 1confidence, 1classid, 1lastseen, 1id, 1iffindforco, 1updatedco/svd score, delta_ratio,     delta_center_x,   delta_center_y
+      else{
+
+        //now newframe is the new frame, prev_frame is the last frame
+        results2 = process_4(interpreter,frame);
+        output_id2=output_id(frame, results2);
+        compare(
+          prev_frame, &results1,output_id1,
+          frame, &results2,output_id2, &addition, &id_list, myList
+        );
+  
+        initial_motion(&results2);//initial the motion value for new objects
+        moved_list=motion_detection_pair(results1, &results2, move_threshold, size_threshold);
+      
+        //check of each in move_list is in id_list or not
+        for(int i=0;i<moved_list.size();i++){
+          auto it = std::find(id_list.begin(), id_list.end(), moved_list[i]);
+          if (it != id_list.end()) {
+              // Element found
+              //do nothing
+          } else {
+              // Element not found
+              id_list.push_back(moved_list[i]);
+          }
+        }
+     
+        output_id2=output_id(frame, results2);
+        std::string outputFileName = "./out/output" + std::to_string(count) + ".jpg";
+        std::cout << count << std::endl;
+ 
+        plotBboxes(frame, results2, coco_names, outputFileName, id_list);
+        //DELETE
+        // update_lastseen(&results2);
+        //DELETE
+        string output="";
+        string meta_result1 = "";
+        bool is_motion = false;
+
+        if(id_list.size()>0){
+          motion_results=results2motion(&results2,&id_list);
+          //ADD
+          if(motion_results.size()>0){  
+          //ADD        
+            meta_result1 = get_meta_data(frame, motion_results); 
+            std::cout << meta_result1 << std::endl;
+            is_motion = true;
+          //ADD
+          }
+          //ADD
+          
+        }
+        //ADD
+        update_lastseen(&results2);
+        id_list.clear();
+        motion_results.clear();
+        //ADD
         remove_unfind(&results2);
+        
+        
+        //make sure this is the old one
 
-        for (const auto& innerVec : results3) {
+        
+
+        for (const auto& innerVec : results1) {
             for (float value : innerVec) {
                 std::cout << value << " ";
             }
@@ -2263,34 +2085,22 @@ int ml_processing_thread()
 
         std::cout << "------" << std::endl;
 
-        id_list.clear(); // clean 
-      
-    }//end of video while loop
-
-    // string std_ml_zone_def_str  = ""; //update this reference  //delete this it is a global var
-    // string zonedef = "<rt7:ZoneDefinition>[" + std_ml_zone_def_str + "]</rt7:ZoneDefinition>"; //update this reference  //change this
-    // string curr_segment_str = zonedef + output;
-
-    // string meta_file = std_videos_save_dir + to_string(segment_id) + std_video_metadata_extension;
-    // std::ofstream out(meta_file, std::ofstream::app);
-    // out << curr_segment_str;
-    // out.close();
-
-    cap.release();
 
 
-    break;
+        results1=results2;
+        output_id1=output_id2;
+        prev_frame=frame;
+      }
+      //so this is for case when the dq is full, empty, then full
+      if(std_ml_image_proc_deque.size()<0){
+        initial=true;
+      }
+    }
 
-
-  }//end of infinite while loop
-
-
+  break;
+  }
   return 0;
-
 }
-
-
-
 
 int main(int argc, char **argv){
 
