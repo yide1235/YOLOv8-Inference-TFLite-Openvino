@@ -1,4 +1,4 @@
-# yolov8-object-tracking-segmentation-C++-tflite
+# Viper-camera-pose-estimation-C++
 
 #### Implementation of Yolov8l detection inference, tracking for motion and ssim pair, segmentation, human-part segmentation with tflite in C++
 
