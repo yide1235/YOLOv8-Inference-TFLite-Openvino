@@ -10,6 +10,9 @@ from PIL import Image
 # Load the input image.
 # image_path = 'tmp.jpg'
 def run_thunder(image_path):
+
+    movenet_threshold=0.5
+
     image = tf.io.read_file(image_path)
     image = tf.compat.v1.image.decode_jpeg(image)
     image = tf.expand_dims(image, axis=0)
@@ -51,14 +54,21 @@ def run_thunder(image_path):
     interpreter.invoke()
     keypoints = interpreter.get_tensor(output_details[0]['index'])
 
-
+    # print(keypoints)
 
     # Compute keypoints location in image
     # keypoints = outputs['output_0']
     points=[]
     for point in keypoints[0][0]:
         # print(point)
-        points.append([int(-x_shift+(point[1]*256))*scale,int(-y_shift+(point[0]*256))*scale])
+        #points in this format: [0.14852381 0.57402444 0.5017696 ]
+        if(point[2]>movenet_threshold):
+          # print('----------------')
+          points.append([int(-x_shift+(point[1]*256))*scale,int(-y_shift+(point[0]*256))*scale])
+        
+        else:
+          points.append([0,0])
+        
     return [points]
 
 

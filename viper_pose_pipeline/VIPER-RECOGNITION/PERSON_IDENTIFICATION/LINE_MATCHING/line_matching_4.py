@@ -10,21 +10,44 @@ from my_ssim import ssim
 
 
 
-def sweep_line_block(src_img,trg_img,bboxes_r, bboxes_l,src_point,height_radius,width_radius):
-    row=int(src_point[1])
-    src_col=int(src_point[0])
+def sweep_line_block(src_img,trg_img,src_point,trg_point, height_radius,width_radius,shift):
+
+
+    row=round(src_point[1])
+    src_col=round(src_point[0])
     src_block=src_img[row-height_radius:row+height_radius+1,src_col-width_radius:src_col+width_radius+1]
     scores=[]
-    # for i in range(width_radius,trg_img.shape[1]-width_radius):
-    for i in range(round(bboxes_l[0][0])+width_radius,round(bboxes_l[0][2])-width_radius):
-        trg_block=trg_img[row-height_radius:row+height_radius+1,i-width_radius:i+width_radius+1]
-        # print(trg_block==0.0)
-        
-        score_ssim = ssim(src_block, trg_block, multichannel=True, channel_axis=2, win_size=7)
-        scores.append(score_ssim)
-        print(i, score_ssim)
 
-    return [scores.index(max(scores))+width_radius,src_point[1]]
+    trg_start=max(round(trg_point[0])-shift,0)
+    trg_end=min(round(trg_point[0])+shift,trg_img.shape[0])
+    # print(trg_img.shape[1])shape[0] is 1080, shape[1] is 1920
+    
+
+
+    max_one=trg_start
+    max_ssim=0
+
+    # for i in range(width_radius,trg_img.shape[1]-width_radius):
+    i=trg_start
+    while i<trg_end:
+
+        row_start=max(0,row-height_radius)
+        row_end=min(row+height_radius+1, trg_img.shape[1])
+        col_start=max(0,i-width_radius)
+        col_end=min(i+width_radius+1,trg_img.shape[0])
+        trg_block=trg_img[row-height_radius:row+height_radius+1,i-width_radius:i+width_radius+1]
+        score_ssim = ssim(src_block, trg_block, multichannel=True, channel_axis=2, win_size=7)
+
+        scores.append(score_ssim)
+        # print(i, score_ssim)
+        if(score_ssim>max_ssim):
+          max_one=i
+          max_ssim=score_ssim
+        i+=2
+        
+    return [max_one,src_point[1]]
+
+    # return [scores.index(max(scores))+width_radius,src_point[1]]
 
 
 

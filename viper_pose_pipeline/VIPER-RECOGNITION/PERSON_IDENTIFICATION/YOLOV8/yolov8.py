@@ -21,7 +21,8 @@ coco_names = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'trai
               'cell phone', 'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors', 
               'teddy bear', 'hair drier', 'toothbrush']
 
-model_name = 'yolov8l_integer_quant'
+# model_name = 'yolov8l_integer_quant'
+model_name = 'yolov8l_float32'
 
 class YOLOV8:
     def __init__(self) -> None:
@@ -94,8 +95,42 @@ class YOLOV8:
         if object is not None:  
             results = [result for result in results if result['cls_name'] == object]
 
+        
+
         return results
     
+
+
+    def expand_bounding_boxes(self, boxes):
+        expanded_boxes = []
+        add=0.5
+        for box in boxes:
+            x1, y1, x2, y2 = box
+            width = x2 - x1
+            height = y2 - y1
+            expanded_x1 = x1 - add * width
+            if(expanded_x1>0):
+                x1=expanded_x1
+
+            expanded_x2 = x2 + add * width
+            if(expanded_x2<self.img_width):
+                x2=expanded_x2
+
+
+            expanded_y1 = y1 - add * height
+            if(expanded_y1>0):
+                y1=expanded_y1   
+            expanded_y2 = y2 + add * height
+            if(expanded_y2<self.img_height):
+                y2=expanded_y2 
+
+            expanded_boxes.append([x1, y1, x2, y2])
+        expanded_boxes=np.array(expanded_boxes)
+        return expanded_boxes
+
+
+
+
     def postprocess(self, output_data):
         output = np.squeeze(output_data).T
         boxes, probs = output[:, :4], output[:, 4:]
@@ -123,6 +158,9 @@ class YOLOV8:
                 box = self.scale_boxes(box)
 
                 score = scores[ind[indices]]
+
+                # #add this line to make the box wider
+                # box=self.expand_bounding_boxes(box)
 
                 for bbox, sscore in zip(box, score):
                     result = {
