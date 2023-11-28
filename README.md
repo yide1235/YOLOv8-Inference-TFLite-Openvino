@@ -138,6 +138,9 @@ or should run in one inference
 wont use segmentation+pca for pose
 just use average of pose
 
+### To check how to install tflite on C++, like rebuild tflite with C++, check here:
+https://github.com/karthickai/tflite.git
+
 
 ### References
 - https://github.com/abewley/sort
