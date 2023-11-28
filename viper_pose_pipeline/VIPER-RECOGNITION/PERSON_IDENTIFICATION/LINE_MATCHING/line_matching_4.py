@@ -66,43 +66,6 @@ from PIL import Image
 
 
 
-# def apply_center_weighted_filter(image):
-#     # Convert the PIL image to a numpy array
-#     img_array = np.array(image)
-
-#     # Get the dimensions of the image
-#     height, width, _ = img_array.shape
-
-#     # Calculate the center of the image
-#     center_x, center_y = width // 2, height // 2
-
-#     # Iterate over each pixel
-#     for x in range(width):
-#         for y in range(height):
-#             # Calculate Euclidean distance from the center
-#             distance = np.sqrt((center_x - x) ** 2 + (center_y - y) ** 2)
-
-#             # Avoid division by zero
-#             if distance == 0:
-#                 continue
-
-#             # Apply the weight based on the distance
-#             weight = 1 / distance
-#             img_array[y, x] = img_array[y, x] * weight
-
-#     # Convert the array back to an image
-#     return Image.fromarray(np.clip(img_array, 0, 255).astype('uint8'))
-
-# # # Example usage with src_block_image and trg_block_image
-# # # Assuming src_block_image and trg_block_image are PIL Image objects
-# # weighted_src_block_image = apply_center_weighted_filter(src_block_image)
-# # weighted_trg_block_image = apply_center_weighted_filter(trg_block_image)
-
-
-
-
-
-
 
 
 def sweep_line_block(src_img, trg_img, src_point, trg_point, height_radius, width_radius, shift):
