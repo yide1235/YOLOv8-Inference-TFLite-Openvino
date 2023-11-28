@@ -134,6 +134,10 @@ yolo predict model=./last.pt source='./tmpr21.png' hide_labels=True boxes=False
 first run background removal then humanpart segmentation
 or should run in one inference
 
+### New update:
+wont use segmentation+pca for pose
+just use average of pose
+
 
 ### References
 - https://github.com/abewley/sort
