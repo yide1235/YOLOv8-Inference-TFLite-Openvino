@@ -141,6 +141,29 @@ just use average of pose
 ### To check how to install tflite on C++, like rebuild tflite with C++, check here:
 https://github.com/karthickai/tflite.git
 
+### for code from yolov8C++_motion_detection: function like this should be modified:
+void generateIds(std::vector<std::vector<float>>* results) {
+    for (int i = 0; i < (*results).size(); ++i) {
+      (*results)[i].push_back(0.0);
+      (*results)[i].push_back(static_cast<float>(i));
+      (*results)[i].push_back(-1.0);
+      (*results)[i].push_back(0.0);
+    }
+    
+}
+//so instead of using (*results), just use results, so the modified version:
+void generateIds(std::vector<std::vector<float>>& results) {
+    for (int i = 0; i < (results).size(); ++i) {
+      (results)[i].push_back(0.0);
+      (results)[i].push_back(static_cast<float>(i));
+      (results)[i].push_back(-1.0);
+      (results)[i].push_back(0.0);
+    }
+    
+}
+
+//this make cause error, but it is fixed at yolov8C++_ssim
+
 
 ### References
 - https://github.com/abewley/sort
