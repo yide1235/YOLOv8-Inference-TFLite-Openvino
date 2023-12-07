@@ -166,7 +166,7 @@ void generateIds(std::vector<std::vector<float>>& results) {
 
 # so the results for depth:
 ![](./assets/left00056.jpg)
-![](./assets/right00056jpg)
+![](./assets/right00056.jpg)
 ![](./assets/depth.png)
 ![](./assets/disparity.png)
 
