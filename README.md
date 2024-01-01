@@ -170,6 +170,14 @@ void generateIds(std::vector<std::vector<float>>& results) {
 ![](./assets/depth.png)
 ![](./assets/disparity.png)
 
+![](./assets/frame00035.jpg)
+![](./assets/frame00035_depth.png)
+![](./assets/frame00051.jpg)
+![](./assets/frame00051_depth.png)
+![](./assets/frame00134.jpg)
+![](./assets/frame00134_depth.png)
+![](./assets/frame00145.jpg)
+![](./assets/frame00145_depth.png)
 
 ### References
 - https://github.com/abewley/sort
