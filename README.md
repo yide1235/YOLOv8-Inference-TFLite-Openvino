@@ -1,4 +1,4 @@
-# Viper-camera-detection-pose-tracking-C++
+# Stereo-camera-detection-pose-tracking-C++
 
 #### Implementation of Yolov8l detection inference, tracking for motion and ssim pair, segmentation, human-part segmentation with tflite in C++
 
