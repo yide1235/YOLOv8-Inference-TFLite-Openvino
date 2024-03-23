@@ -1,1 +1,0 @@
-float ssim(const cv::Mat& im1, const cv::Mat& im2, int channel_axis, bool multichannel, int win_size);

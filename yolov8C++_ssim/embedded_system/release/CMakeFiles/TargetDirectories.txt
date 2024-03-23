@@ -1,3 +1,0 @@
-/home/myd/Desktop/C++test/release/CMakeFiles/rebuild_cache.dir
-/home/myd/Desktop/C++test/release/CMakeFiles/edit_cache.dir
-/home/myd/Desktop/C++test/release/CMakeFiles/TFLiteCheck.dir
