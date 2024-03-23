@@ -164,13 +164,6 @@ void generateIds(std::vector<std::vector<float>>& results) {
 
 //this make cause error, but it is fixed at yolov8C++_ssim
 
-# so the results for depth:
-![](./assets/left00056.jpg)
-![](./assets/right00056.jpg)
-![](./assets/depth.png)
-![](./assets/disparity.png)
-
-
 # end of results
 
 ### References
