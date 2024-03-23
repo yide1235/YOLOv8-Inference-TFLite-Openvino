@@ -15,10 +15,10 @@ Tracking on objects on image pairs(YOLOv8-TFLite-object-matching-python,YOLOv8-T
 ![](./assets/2.jpg)
 
 YOLOv8l tflite detection result:
-![](./assets/3.jpg)
+![](./assets/3.png)
 
 YOLOv8l tflite segmentation result:
-![](./assets/4.jpg)
+![](./assets/4.png)
 
 -------
 
