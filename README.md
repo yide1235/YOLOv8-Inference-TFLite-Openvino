@@ -7,7 +7,7 @@
 
 - Clone the repository
 ```
-https://github.com/yide1235/Yolov8-tracking-tflite-CPP.git
+[https://github.com/yide1235/Yolov8-tracking-tflite-CPP.git](https://github.com/yide1235/YOLOv8-Inference-TFLite-Openvino.git)
 ```
 ### Results
 Tracking on objects on image pairs(YOLOv8-TFLite-object-matching-python,YOLOv8-TFLite-object-matching-C++)
