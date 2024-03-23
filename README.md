@@ -15,7 +15,7 @@ https://github.com/yide1235/YOLOv8-Inference-TFLite-Openvino.git
 ![](./assets/2.jpg)
 
 ----------------------------------
-###YOLOv8l tflite detection result:
+### YOLOv8l tflite detection result:
 ![](./assets/3.png)
 
 ----------------------------------
